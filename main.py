@@ -1,10 +1,18 @@
 import pyglet
+from pyglet.window import key
 import numpy as np
 from pprint import pprint
+import time
+import json
 
 class window(pyglet.window.Window):
 
-    def __init__(self, width=1100, height=750):
+    def __init__(self, theme="default"):
+
+        # get the theme
+        self.theme = self.get_theme(theme)
+        width  = self.theme['dimension']['width']
+        height = self.theme['dimension']['height']
 
         display = pyglet.canvas.get_display()
         screen = display.get_default_screen()
@@ -24,75 +32,67 @@ class window(pyglet.window.Window):
         pyglet.gl.glClearColor(1, 1, 1, 1)
         self.batch = pyglet.graphics.Batch()
 
-        # create 3 layers
-        self.background = pyglet.graphics.OrderedGroup(0)
-        self.midleground = pyglet.graphics.OrderedGroup(1)
-        self.foreground = pyglet.graphics.OrderedGroup(2)
+        # create layers
+        self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(self.theme['locations']+1)]
 
-        self.sprites = []
-        board_image = pyglet.image.load('asset/board.png')
-        board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.background)
-        self.sprites.append(board_sprite)
-
-        black_image = pyglet.image.load('asset/black.png')
-        black_sprite = pyglet.sprite.Sprite(black_image, batch=self.batch, group=self.midleground, x=0, y=0)
-        #self.sprites.append(black_sprite)
-
-        white_image = pyglet.image.load('asset/white.png')
-        white_sprite = pyglet.sprite.Sprite(white_image, batch=self.batch, group=self.midleground, x=320, y=100)
-        self.sprites.append(white_sprite)
+        # display the background 
+        board_image = pyglet.image.load(self.theme['sprites']['board'])
+        self.board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.groups[0])
+        
+        self.locations = [None] * self.theme['locations']
+    
+    @staticmethod
+    def get_theme(theme_name):
+        with open('asset/themes.json', 'r') as f:
+            themes = json.load(f)
+        if theme_name in themes:
+            return themes[theme_name]
+        return themes['default']
 
     def on_draw(self):
         self.clear()
         self.batch.draw()
 
     def start(self):
+        player = 1
+        for pos in range(self.theme['locations']):
+            self.place_box(pos, player=player)
+            # player : 1->2 and 2->1
+            player = 3-player
+                
+    def place_box(self, pos, player=1):
+        im_path = self.theme['sprites'][f'player_{player}']
+        im = pyglet.image.load(im_path)
 
-        # [[-1. -1. -1. -1. -1. -1. -1. -1. -1. -1. -1.]
-        #  [-1. -1. -1. -1. -1.  4.  5.  6.  7.  8. -1.]
-        #  [-1. -1. -1. -1.  3.  4.  5.  6.  7.  8. -1.]
-        #  [-1. -1. -1.  2.  3.  4.  5.  6.  7.  8. -1.]
-        #  [-1. -1.  1.  2.  3.  4.  5.  6.  7.  8. -1.]
-        #  [-1.  0.  1.  2.  3.  4.  5.  6.  7.  8. -1.]
-        #  [-1.  0.  1.  2.  3.  4.  5.  6.  7. -1. -1.]
-        #  [-1.  0.  1.  2.  3.  4.  5.  6. -1. -1. -1.]
-        #  [-1.  0.  1.  2.  3.  4.  5. -1. -1. -1. -1.]
-        #  [-1.  0.  1.  2.  3.  4. -1. -1. -1. -1. -1.]
-        #  [-1. -1. -1. -1. -1. -1. -1. -1. -1. -1. -1.]]
+        x, y = self.theme['coordinates'][pos]
 
-        board = np.zeros((11, 11))
-        # set border to void
-        board[0, :]=board[-1, :]=board[:,0]=board[:,-1] = -1
-        # set possible values
-        board[1:-1,1:-1] = np.tile(np.arange(9), (9, 1))
-        for i in range(4):
-            board[1+i, 1:4-i+1] = board[9-i, 6+i:-1] = -1
-
-
-        #                 (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), 
-        #             (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), 
-        #         (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), 
-        #     (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), 
-        # (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8), (5, 9), 
-        #     (6, 1), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8), 
-        #         (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), 
-        #             (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), 
-        #                 (9, 1), (9, 2), (9, 3), (9, 4), (9, 5),
-        # 
-
-        boxs = [ (r, c) for r in range(11) for c in range(11) if board[r, c] != -1]
-
-        # Actions : possible 
-        left      = (0,  -1)
-        right     = (0,  +1)
-        upleft    = (-1,  0)
-        upright   = (-1, +1)
-        downleft  = (+1, -1)
-        downright = (+1,  0)
-
+        sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[pos+1], x=x, y=y)
+        self.locations[pos] = sprite
 
     def update(self, dt):
-        pass
+        return 
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        print(x, y)
+    
+    def on_key_press(self, symbol, modifiers):
+        
+        tmp = {
+            key.LEFT  : (-1, 0),
+            key.RIGHT : (+1, 0),
+            key.DOWN  : (0, -1),
+            key.UP    : (0, +1)
+        }
+
+        i = 1
+
+        if symbol in tmp:
+            x, y = self.locations[i].position
+            dx, dy = tmp[symbol]
+            new_x, new_y = x+dx, y+dy
+            self.locations[i].update(x=new_x, y=new_y)
+            print(new_x, new_y)
+
 
 
 if __name__ == '__main__':
@@ -100,5 +100,5 @@ if __name__ == '__main__':
     main = window()
     main.start()
 
-    pyglet.clock.schedule_interval(main.update, 1 / 60)
+    #pyglet.clock.schedule_interval(main.update, 1 / 60)
     pyglet.app.run()
