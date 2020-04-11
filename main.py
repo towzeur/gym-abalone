@@ -110,7 +110,58 @@ class window(pyglet.window.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         print(x, y)
-    
+        print(self.is_marbles_clicked(x, y))
+
+    def is_marbles_clicked(self, x, y):
+        """
+        return the pos of the clicked marble.
+        
+        It do so by starting in the first row and increse the col.
+        It's a bit better than bruteforce because it skips the current row if the 
+        first elt (first column) is not within the outter box.
+        if the click is find inside a box, it compute the L2 norm to find
+        if the click is inded upon the marble.
+
+        Returns:
+            (int) pos : pos of the clicked marble if it exists (0 < pos < self.theme['locations'] )
+            (int)  -1 : otherwise
+        """
+
+        R = self.theme['dimension']['marble_radius']
+        C = R * 2
+
+        pos = 0
+        for row, nb_col in enumerate(self.theme['rows']):
+            for col in range(nb_col):
+                x_bot_left, y_bot_left = self.theme['coordinates'][pos]
+                # we first start by checking if the click is in the circle's outter box
+                # are we in the right row ?
+                if 0 <= (y -  y_bot_left) <= C:
+                    # then if a solution exist it may be on this row
+                    # is it on this box ?
+                    if 0 <= (x -  x_bot_left) <= C:
+                        
+                        x_c = x_bot_left + R
+                        y_c = y_bot_left + R
+                        # is it on the circle or somhere else inside the box ?
+                        # if so we have a winner
+                        if (x-x_c)**2 + (y-y_c)**2 < R**2:
+                            return pos
+                        # otherwise, because we are in the right box
+                        # we can't be on another box so there is no hope 
+                        # for finding a clicled marble
+                        else:
+                            return -1
+                    else:
+                        pos += 1
+                    # then maybe it is on another box in the same row
+                    # (the next iner loop iteration)
+                # try on the next row
+                else:
+                    pos +=  self.theme['rows'][row]
+                    break
+        return -1
+
     def on_key_press(self, symbol, modifiers):
         
         tmp = {
@@ -137,6 +188,6 @@ class window(pyglet.window.Window):
 if __name__ == '__main__':
 
     main = window()
-    main.init_window(random_pick=False, debug=False)
+    main.init_window(random_pick=False, debug=True)
     #pyglet.clock.schedule_interval(main.update, 1)
     pyglet.app.run()
