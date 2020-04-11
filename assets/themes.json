@@ -7,10 +7,10 @@
       "height": 600
     },
     "sprites": {
-      "board": "configs/default/board_880x600.png",
+      "board": "assets/default/board_880x600.png",
       "players": [
-        "configs/default/white48px.png",
-        "configs/default/black48px.png"
+        "assets/default/white48px.png",
+        "assets/default/black48px.png"
       ]
     },
     "coordinates": [

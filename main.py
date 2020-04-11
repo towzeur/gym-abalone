@@ -52,10 +52,10 @@ class window(pyglet.window.Window):
         self.clear()
         self.batch.draw()
 
-    def init_window(self, debug=True):
+    def init_window(self, variant_name='classical', random_pick=True, debug=True):
 
         # reset the game
-        self.game.init_game(random_pick=True)
+        self.game.init_game(variant_name=variant_name, random_pick=random_pick)
 
         # reset players's sprites
         if self.players_cells:
@@ -68,7 +68,7 @@ class window(pyglet.window.Window):
         self.players_cells = None
 
         # draw the board for the first time
-        self.draw_board(debug)
+        self.draw_board(debug=debug)
 
     def draw_token(self, pos, player=1, debug=True):
         cell = {}
@@ -137,6 +137,6 @@ class window(pyglet.window.Window):
 if __name__ == '__main__':
 
     main = window()
-    main.init_window()
-    pyglet.clock.schedule_interval(main.update, 1)
+    main.init_window(random_pick=False, debug=False)
+    #pyglet.clock.schedule_interval(main.update, 1)
     pyglet.app.run()

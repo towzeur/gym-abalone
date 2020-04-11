@@ -18,8 +18,8 @@ class AbaloneUtils:
 
     @staticmethod
     def get_theme(theme_name='default', random_pick=False):
-        return AbaloneUtils._safe_json_pick(theme_name, 'asset/themes.json', 'default', random_pick)
+        return AbaloneUtils._safe_json_pick(theme_name, 'assets/themes.json', 'default', random_pick)
     
     @staticmethod
     def get_variants(variant_name='classical', random_pick=False):
-        return AbaloneUtils._safe_json_pick(variant_name, 'starting_position/variants.json', 'classical', random_pick)
+        return AbaloneUtils._safe_json_pick(variant_name, 'assets/variants.json', 'classical', random_pick)
