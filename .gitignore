@@ -1,1 +1,5 @@
-work/MgaV9.png
+# ignore work dir
+work
+
+# ignore 
+__pycache__

@@ -81,7 +81,7 @@ def repr_board(out):
 def process():
 
     # find all the positions from red pixel in the test image 
-    data = np.array(Image.open('test.png'))
+    data = np.array(Image.open('80/_test.png'))
     pos = []
     for row in range(data.shape[0]):
         for col in range(data.shape[1]):
@@ -121,7 +121,7 @@ def process():
         configs[name] = config
 
     # Writing JSON data
-    with open('variants.json', 'w') as f:
+    with open('../configs/variants.json', 'w') as f:
         json.dump(configs, f, indent=2)
 
 
