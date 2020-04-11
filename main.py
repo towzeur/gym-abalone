@@ -71,7 +71,10 @@ class window(pyglet.window.Window):
         self.draw_board(debug=debug)
 
     def draw_token(self, pos, player=1, debug=True):
-        cell = {}
+        cell = {
+            'pos':pos,
+            'out':False
+        }
 
         # compute the coords from the pos
         x, y = self.theme['coordinates'][pos]
@@ -109,8 +112,24 @@ class window(pyglet.window.Window):
         return 
 
     def on_mouse_press(self, x, y, button, modifiers):
-        print(x, y)
-        print(self.is_marbles_clicked(x, y))
+        print(f'({x}, {y})')
+        pos = self.is_marbles_clicked(x, y)
+        if pos != -1:
+            player_token = self.game.action(pos)
+            player = player_token - 1
+            # find the cell
+            for cell in self.players_cells[player]:
+                if cell['pos'] == pos:
+                    damage_index = self.game.players_damages[player]
+                    new_x, new_y = self.theme['out_coordinates'][player][damage_index]
+                    cell['sprite'].update(x=new_x, y=new_y)
+                    # increase damage
+                    self.game.players_damages[player] += 1
+                    break
+            
+
+
+
 
     def is_marbles_clicked(self, x, y):
         """

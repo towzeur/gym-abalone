@@ -39,14 +39,20 @@ There is two possible directions :
 
 #### Pushing-the-opponent
 
-**Sumito** 
+**Sumito**
+
 In order to push opponent's marbles, one needs to be in one of the Sumito's situation.
 i.e. the player must have the numerical superiority.
--	3 vs 2
--	3 vs 1
--	2 vs 1
+
+
+| Sumito              | Diagram                                           |
+| :---:               | :---:                                             |
+| A "3-push-2 Sumito" | <img src="docs/rules/sumito/3vs2.png" width=100%> |
+| A "3-push-1 Sumito" | <img src="docs/rules/sumito/3vs1.png" width=100%> |
+| A "2-push-1 Sumito" | <img src="docs/rules/sumito/3vs1.png" width=100%> |
 
 **PAC**
+
 Another important rule in Abalone concerns "Pac" situations. In these situations, iT is impossible for 
 Players can't perform Sumito moves in theses situations because none of them have the numerical lead.
 -	1 vs 1
@@ -65,7 +71,7 @@ See all the supported [variations](https://github.com/towzeur/script/80/)
 
 There are several possible placements to start with, the most popular are :
 -   « La formation Standard » proposée par les concepteurs du jeu.
--   
+-   é
 
 In 1999, a number of top players from the Mind Sports Olympiad signed an agreement to use a different starting position (the Belgian daisy) to revitalize the game. This has been used for top tournaments since then, including the AbaCup.
 
@@ -90,7 +96,7 @@ while not done:
 
 ## TODO
 
-- [x] Foo
-- [x] Bar
-- [ ] Baz
+- [X] detect pos on click
+- [X] add out_coordinates for removed marbles
+- [ ] 
 
