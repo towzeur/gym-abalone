@@ -28,6 +28,7 @@ class AbaloneGame:
         self.variant = None
         self.players = 0
         self.players_sets = []
+        self.players_damaged_sets = []
 
     def init_game(self, variant_name='classical', random_pick=False):
 
@@ -55,6 +56,8 @@ class AbaloneGame:
             for pos in self.players_sets[p]:
                 r, c = self.positions[pos]
                 self.board[r, c] = TOKEN_PLAYER
+
+        self.players_damages = [0 for p in range(self.players)]
         
     @staticmethod
     def new_board():
@@ -100,6 +103,12 @@ class AbaloneGame:
         """
         n = AbaloneGame.BOARD_SIZE
         return [(r, c) for r in range(n) for c in range(n) if board[r, c] == token]
+
+    def action(self, clicked_pos):
+        clicked_index = self.positions[clicked_pos]
+        clicked_token = self.board[clicked_index]
+        print(clicked_pos, clicked_token)
+        return clicked_token
 
 
 if __name__ == '__main__':
