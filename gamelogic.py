@@ -32,7 +32,6 @@ class AbaloneGame:
     def init_game(self, variant_name='classical', random_pick=False):
 
         self.board = self.new_board()
-        print(self.board)
 
         self.positions = self.find_token_position(self.board, AbaloneGame.TOKEN_EMPTY)
         #                 (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), 
@@ -45,9 +44,6 @@ class AbaloneGame:
         #             (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), 
         #                 (9, 1), (9, 2), (9, 3), (9, 4), (9, 5),
         # 
-
-        print(self.positions)
-        print(len(self.positions))
 
         self.variant = AbaloneUtils.get_variants(variant_name=variant_name, random_pick=random_pick)
         self.players = self.variant["players"]
@@ -70,7 +66,7 @@ class AbaloneGame:
             numpy.ndarray: the new board
 
         Examples:
-            >>> print(AbaloneGame.new())
+            >>> print(AbaloneGame.new_board())
             [[-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1]
              [-1 -1 -1 -1 -1  0  0  0  0  0 -1]
              [-1 -1 -1 -1  0  0  0  0  0  0 -1]

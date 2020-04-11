@@ -52,7 +52,7 @@ class window(pyglet.window.Window):
         self.clear()
         self.batch.draw()
 
-    def init_window(self):
+    def init_window(self, debug=True):
 
         # reset the game
         self.game.init_game(random_pick=True)
@@ -62,13 +62,13 @@ class window(pyglet.window.Window):
             for player_cells in self.players_cells:
                 for cell in player_cells:
                     cell['sprite'].delete()
-                    if cell['pos_text']:
+                    if 'pos_text' in cell:
                         cell['pos_text'].delete()
                     del cell
         self.players_cells = None
 
         # draw the board for the first time
-        self.draw_board()
+        self.draw_board(debug)
 
     def draw_token(self, pos, player=1, debug=True):
         cell = {}
@@ -96,15 +96,16 @@ class window(pyglet.window.Window):
 
         return cell
 
-    def draw_board(self):
+    def draw_board(self, debug=True):
         self.players_cells = [[] for p in range(self.game.players)]
         for p in range(self.game.players):
             TOKEN_PLAYER = p + 1
             for pos in self.game.players_sets[p]:
-                cell = self.draw_token(pos, player=TOKEN_PLAYER)
+                cell = self.draw_token(pos, player=TOKEN_PLAYER, debug=debug)
                 self.players_cells[p].append(cell)
 
     def update(self, dt):
+        self.init_window(debug=False)
         return 
 
     def on_mouse_press(self, x, y, button, modifiers):
