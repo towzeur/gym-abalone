@@ -90,7 +90,7 @@ def process():
                 pos.append((row, col))
 
 
-    configs = []
+    configs = {}
     images = glob.glob('80/*')
     for image_id, image in enumerate(images):
         print(image)
@@ -100,10 +100,10 @@ def process():
         data = np.array(Image.open(image))
 
         config = {
-            'name': name,
             'id' : image_id,
-            'black': [],
-            'white': []
+            'board_nb' : 61,
+            'players' : 2,
+            'players_sets': [[] for i in range(2)]
         }
 
         out = []
@@ -111,28 +111,21 @@ def process():
             r, g, b = data[row, col, :3]
             value = detect_pixel((r,g,b))
             if value !=  '_':
-                config[{'b':'black', 'w':'white'}[value]].append(i)
+                config['players_sets'][{'b':0, 'w':1}[value]].append(i)
             out.append(value)
 
-        try:
-            assert len(config['black'])==len(config['white'])
-        except AssertionError:
+
+        if len(config['players_sets'][0]) != len(config['players_sets'][1]):
             repr_board(out)
 
-
-        configs.append(config)
-
+        configs[name] = config
 
     # Writing JSON data
     with open('variants.json', 'w') as f:
-        json.dump(configs, f, indent=1)
+        json.dump(configs, f, indent=2)
 
 
     return
-
-
-
-
     
     '''
     'I5','I6','I7','I8','I9',

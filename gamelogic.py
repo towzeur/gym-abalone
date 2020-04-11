@@ -1,5 +1,5 @@
 import numpy as np
-
+from gameutils import AbaloneUtils
 
 class AbaloneGame:
 
@@ -16,13 +16,21 @@ class AbaloneGame:
     # tokens
     TOKEN_VOID     = -1
     TOKEN_EMPTY    =  0
-    TOKEN_PLAYER_1 =  1
-    TOKEN_PLAYER_2 =  2
+    # TOKEN_PLAYER_1 =  1 
+    # TOKEN_PLAYER_2 =  2
+    # the player # n have token n
 
     BOARD_SIZE = 11
 
     def __init__(self):
-        
+        self.board = None
+        self.positions = None
+        self.variant = None
+        self.players = 0
+        self.players_sets = []
+
+    def init_game(self, variant_name='classical', random_pick=False):
+
         self.board = self.new_board()
         print(self.board)
 
@@ -41,6 +49,17 @@ class AbaloneGame:
         print(self.positions)
         print(len(self.positions))
 
+        self.variant = AbaloneUtils.get_variants(variant_name=variant_name, random_pick=random_pick)
+        self.players = self.variant["players"]
+        self.players_sets = self.variant["players_sets"]
+
+        # fill the board
+        for p in range(self.players):
+            TOKEN_PLAYER = p + 1
+            for pos in self.players_sets[p]:
+                r, c = self.positions[pos]
+                self.board[r, c] = TOKEN_PLAYER
+        
     @staticmethod
     def new_board():
         """Example function with types documented in the docstring.

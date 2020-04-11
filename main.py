@@ -5,12 +5,19 @@ from pprint import pprint
 import time
 import json
 
+from gamelogic import AbaloneGame
+from gameutils import AbaloneUtils
+
 class window(pyglet.window.Window):
 
     def __init__(self, theme="default"):
 
-        # get the theme
-        self.theme = self.get_theme(theme)
+        # set the theme
+        self.theme = AbaloneUtils.get_theme(theme)
+
+        # init the game engine
+        self.game = AbaloneGame()
+
         width  = self.theme['dimension']['width']
         height = self.theme['dimension']['height']
 
@@ -20,7 +27,7 @@ class window(pyglet.window.Window):
         screen_width = screen.width
         screen_height = screen.height
 
-        # init the window
+        # init the window's constructor
         super(window, self).__init__(screen=screen, width=width, height=height, vsync=False)
 
         # center the window
@@ -33,41 +40,69 @@ class window(pyglet.window.Window):
         self.batch = pyglet.graphics.Batch()
 
         # create layers
-        self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(self.theme['locations']+1)]
+        self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(3)]
 
         # display the background 
         board_image = pyglet.image.load(self.theme['sprites']['board'])
         self.board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.groups[0])
         
-        self.locations = [None] * self.theme['locations']
-    
-    @staticmethod
-    def get_theme(theme_name):
-        with open('asset/themes.json', 'r') as f:
-            themes = json.load(f)
-        if theme_name in themes:
-            return themes[theme_name]
-        return themes['default']
+        self.players_cells = None
 
     def on_draw(self):
         self.clear()
         self.batch.draw()
 
-    def start(self):
-        player = 1
-        for pos in range(self.theme['locations']):
-            self.place_box(pos, player=player)
-            # player : 1->2 and 2->1
-            player = 3-player
-                
-    def place_box(self, pos, player=1):
-        im_path = self.theme['sprites'][f'player_{player}']
-        im = pyglet.image.load(im_path)
+    def init_window(self):
 
+        # reset the game
+        self.game.init_game(random_pick=True)
+
+        # reset players's sprites
+        if self.players_cells:
+            for player_cells in self.players_cells:
+                for cell in player_cells:
+                    cell['sprite'].delete()
+                    if cell['pos_text']:
+                        cell['pos_text'].delete()
+                    del cell
+        self.players_cells = None
+
+        # draw the board for the first time
+        self.draw_board()
+
+    def draw_token(self, pos, player=1, debug=True):
+        cell = {}
+
+        # compute the coords from the pos
         x, y = self.theme['coordinates'][pos]
 
-        sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[pos+1], x=x, y=y)
-        self.locations[pos] = sprite
+        # select the right player image
+        im_path = self.theme['sprites']['players'][player-1]
+
+        # create the sprite
+        im = pyglet.image.load(im_path)
+        cell['sprite'] = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[1], x=x, y=y)
+
+        if debug:
+            cell['pos_text'] = pyglet.text.Label(
+                f'{pos}', x=x, y=y,
+                font_name='Roboto',
+                font_size=28,
+                color=(0, 0, 0, 255) if player==1 else (255, 255, 255, 255),
+                anchor_x='left', anchor_y='bottom',
+                batch=self.batch,
+                group=self.groups[2]
+            )
+
+        return cell
+
+    def draw_board(self):
+        self.players_cells = [[] for p in range(self.game.players)]
+        for p in range(self.game.players):
+            TOKEN_PLAYER = p + 1
+            for pos in self.game.players_sets[p]:
+                cell = self.draw_token(pos, player=TOKEN_PLAYER)
+                self.players_cells[p].append(cell)
 
     def update(self, dt):
         return 
@@ -87,18 +122,20 @@ class window(pyglet.window.Window):
         i = 1
 
         if symbol in tmp:
+            self.init_window()
+            return
+
+            '''
             x, y = self.locations[i].position
             dx, dy = tmp[symbol]
             new_x, new_y = x+dx, y+dy
             self.locations[i].update(x=new_x, y=new_y)
             print(new_x, new_y)
-
-
+            '''
 
 if __name__ == '__main__':
 
     main = window()
-    main.start()
-
-    #pyglet.clock.schedule_interval(main.update, 1 / 60)
+    main.init_window()
+    pyglet.clock.schedule_interval(main.update, 1)
     pyglet.app.run()

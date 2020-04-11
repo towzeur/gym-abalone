@@ -8,8 +8,10 @@
     },
     "sprites": {
       "board": "asset/default/board_880x600.png",
-      "player_1": "asset/default/white48px.png",
-      "player_2": "asset/default/black48px.png"
+      "players": [
+        "asset/default/white48px.png",
+        "asset/default/black48px.png"
+      ]
     },
     "coordinates": [
       [
