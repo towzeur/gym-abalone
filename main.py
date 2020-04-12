@@ -36,6 +36,8 @@ class Marble:
         # marble sprite
         im_path = self.theme['sprites']['players'][self.player]
         im = pyglet.image.load(im_path)
+        im.anchor_x = im.width  // 2
+        im.anchor_y = im.height // 2
         self.sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[1])
         # label sprite if debug
         if self.debug:
@@ -63,8 +65,8 @@ class Marble:
             self.sprite.update(x_new, y_new)
 
             if self.debug:
-                self.label.x = x_new + self.theme['dimension']['marble_radius']
-                self.label.y = y_new + self.theme['dimension']['marble_radius']
+                self.label.x = x_new
+                self.label.y = y_new
                 self.label.text = str(pos)
 
 
@@ -107,8 +109,10 @@ class window(pyglet.window.Window):
         self.board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.groups[0])
         
         # selected sprite
-        selected_sprite = pyglet.image.load(self.theme['sprites']['selected'])
-        self.selected_sprite = pyglet.sprite.Sprite(selected_sprite, batch=self.batch, group=self.groups[2])
+        selected_im = pyglet.image.load(self.theme['sprites']['selected'])
+        selected_im.anchor_x = selected_im.width  // 2
+        selected_im.anchor_y = selected_im.height // 2
+        self.selected_sprite = pyglet.sprite.Sprite(selected_im, batch=self.batch, group=self.groups[2])
         self.selected_sprite.visible = False
 
         self.marbles = None
@@ -152,9 +156,8 @@ class window(pyglet.window.Window):
 
                 # show the slected border
                 x, y = self.theme['coordinates'][pos]
-                offset = (self.selected_sprite.width - 48)/2
                 self.selected_sprite.visible = True
-                self.selected_sprite.update(x=x-offset, y=y-offset)
+                self.selected_sprite.update(x=x, y=y)
 
                 #player = token - 1
                 # find the cell
@@ -188,21 +191,18 @@ class window(pyglet.window.Window):
         """
 
         R = self.theme['dimension']['marble_radius']
-        C = R * 2
 
         pos = 0
         for row, nb_col in enumerate(self.theme['rows']):
             for col in range(nb_col):
-                x_bot_left, y_bot_left = self.theme['coordinates'][pos]
+                x_c, y_c = self.theme['coordinates'][pos]
                 # we first start by checking if the click is in the circle's outter box
                 # are we in the good row ?
-                if 0 <= (y -  y_bot_left) <= C:
+                if np.abs(y -  y_c) <= R:
                     # then if a solution exist it may be on this row
                     # is it on this box ?
-                    if 0 <= (x -  x_bot_left) <= C:
-                        x_c = x_bot_left + R
-                        y_c = y_bot_left + R
-                        # is it on the circle or somhere else inside the box ?
+                    if np.abs(x -  x_c) <= R:
+                        # is it on the circle or somwhere else inside the box ?
                         # if so we have a winner
                         if (x-x_c)**2 + (y-y_c)**2 < R**2:
                             return pos

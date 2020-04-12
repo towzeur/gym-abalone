@@ -121,7 +121,7 @@ def process():
         configs[name] = config
 
     # Writing JSON data
-    with open('../configs/variants.json', 'w') as f:
+    with open('../assets/variants.json', 'w') as f:
         json.dump(configs, f, indent=2)
 
 
