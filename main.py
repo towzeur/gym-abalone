@@ -26,49 +26,85 @@ class Marble:
         self.groups = groups
         self.debug = debug
 
-        self.sprite = None
-        self.label = None
+        self.sprites = { sprite_name : None for sprite_name in
+            ['marble', 'label', 'arrow', 'selected']
+        }
         self._init_sprites()
 
         self.pos = None
 
     def _init_sprites(self):
         # marble sprite
-        im_path = self.theme['sprites']['players'][self.player]
-        im = pyglet.image.load(im_path)
-        im.anchor_x = im.width  // 2
-        im.anchor_y = im.height // 2
-        self.sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[1])
+        im = AbaloneUtils.get_im_centered(self.theme['sprites']['players'][self.player])
+        self.sprites['marble'] = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[1])
+
         # label sprite if debug
         if self.debug:
             color = Marble.LABEL_COLORS.get(self.player_token, Marble.LABEL_COLORS['default'])
-            self.label = pyglet.text.Label(
+            self.sprites['label']  = pyglet.text.Label(
                 font_name='Roboto', font_size=28,
                 color = color,
                 anchor_x='center', anchor_y='center',
                 batch=self.batch, group=self.groups[2]
             )
+        
+        # direction arrow sprite
+        im = AbaloneUtils.get_im_centered(self.theme['sprites']['arrows'][self.player])
+        self.sprites['arrow'] = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[2])
+        self.sprites['arrow'].visible = False
+
+        # selected sprite
+        im = AbaloneUtils.get_im_centered(self.theme['sprites']['selected'])
+        self.sprites['selected'] = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[2])
+        self.sprites['selected'].visible = False
+
 
     def delete(self):
-        if self.sprite:
-            self.sprite.delete()
-            self.sprite = None
-        if self.label:
-            self.label.delete()
-            self.label = None
+        for sprite_name, sprite in self.sprites.items(): 
+            if sprite:
+                sprite.delete()
+                del self.sprites[sprite_name]
+                self.sprites[sprite_name] = None
 
     def change_position(self, pos):
         if self.pos != pos:
             self.pos = pos
 
             x_new, y_new = self.theme['coordinates'][pos]
-            self.sprite.update(x_new, y_new)
+            self.sprites['marble'].update(x_new, y_new)
+            self.sprites['arrow'].update(x_new, y_new)
+            self.sprites['selected'].update(x_new, y_new)
 
             if self.debug:
-                self.label.x = x_new
-                self.label.y = y_new
-                self.label.text = str(pos)
+                self.sprites['label'].x = x_new
+                self.sprites['label'].y = y_new
+                self.sprites['label'].text = str(pos)
+            
 
+    
+    def change_direction(self, direction_index):
+        """ change the arrow angle to show up a new direction
+
+        Args:
+            direction_index (int): the direction index 0<=  <6
+                ie : 
+                           4     5
+                            \   /
+                             \ /
+                      3 ----- * ----- 0 
+                             /  \
+                            /    \ 
+                           2      1
+        """
+        angle = direction_index * 60 #(360 / 6)
+        self.sprites['arrow'].update(rotation=angle)
+        self.sprites['arrow'].visible = True
+    
+    def select(self):
+        self.sprites['selected'].visible = True
+
+    def unselect(self):
+        self.sprites['selected'].visible = False
 
 class window(pyglet.window.Window):
 
@@ -141,84 +177,44 @@ class window(pyglet.window.Window):
         self.batch.draw()
 
     def update(self, dt):
-        self.init_window(random_pick=True, debug=True)
+        # set random variant
+        self.init_window(random_pick=True, debug=False)
 
+        for marble in self.marbles:
+            if marble:
+                # set random direction
+                direction_index = np.random.randint(6)
+                marble.change_direction(direction_index)
+
+                # randomly select
+                if np.random.rand() > .5:
+                    marble.select()
 
     def on_mouse_press(self, x, y, button, modifiers):
         print(f'({x}, {y})')
-        pos = self.is_marbles_clicked(x, y)
 
+        pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
         if pos != -1:
-
             token = self.game.action(pos)
-           
             if token != self.game.TOKEN_EMPTY:
 
                 # show the slected border
-                x, y = self.theme['coordinates'][pos]
-                self.selected_sprite.visible = True
-                self.selected_sprite.update(x=x, y=y)
+                self.mables[pos].select() 
+
+                #x, y = self.theme['coordinates'][pos]
 
                 #player = token - 1
                 # find the cell
                 #for cell in self.players_cells[player]:
                 #    if cell['pos'] == pos:
                 #        pass
-                        
-                '''
-                damage_index = self.game.players_damages[player]
-                new_x, new_y = self.theme['out_coordinates'][player][damage_index]
-                cell['sprite'].update(x=new_x, y=new_y)
-                # increase damage
-                self.game.players_damages[player] += 1
-                break
-                '''
                     
-
-    def is_marbles_clicked(self, x, y):
-        """
-        return the pos of the clicked marble.
-        
-        It do so by starting in the first row and increse the col.
-        It's a bit better than bruteforce because it skips the current row if the 
-        first elt (first column) is not within the outter box.
-        if the click is find inside a box, it compute the L2 norm to find
-        if the click is inded upon the marble.
-
-        Returns:
-            (int) pos : pos of the clicked marble if it exists (0 < pos < self.theme['locations'] )
-            (int)  -1 : otherwise
-        """
-
-        R = self.theme['dimension']['marble_radius']
-
-        pos = 0
-        for row, nb_col in enumerate(self.theme['rows']):
-            for col in range(nb_col):
-                x_c, y_c = self.theme['coordinates'][pos]
-                # we first start by checking if the click is in the circle's outter box
-                # are we in the good row ?
-                if np.abs(y -  y_c) <= R:
-                    # then if a solution exist it may be on this row
-                    # is it on this box ?
-                    if np.abs(x -  x_c) <= R:
-                        # is it on the circle or somwhere else inside the box ?
-                        # if so we have a winner
-                        if (x-x_c)**2 + (y-y_c)**2 < R**2:
-                            return pos
-                        # otherwise, because the click is within in the right box
-                        # it can't be on another box
-                        else:
-                            return -1
-                    else:
-                        pos += 1
-                    # then maybe it is on another box in the same row
-                    # (the next iner loop iteration)
-                # try on the next row
-                else:
-                    pos +=  self.theme['rows'][row]
-                    break
-        return -1
+                #damage_index = self.game.players_damages[player]
+                #new_x, new_y = self.theme['out_coordinates'][player][damage_index]
+                #cell['sprite'].update(x=new_x, y=new_y)
+                # increase damage
+                #self.game.players_damages[player] += 1
+                #break
 
     def on_key_press(self, symbol, modifiers):
         
@@ -229,23 +225,25 @@ class window(pyglet.window.Window):
             key.UP    : (0, +1)
         }
 
-        i = 1
-
         if symbol in tmp:
-            self.init_window()
-            return
+            pass
+            #self.init_window()
+            
+            #x, y = self.locations[i].position
+            #dx, dy = tmp[symbol]
+            #new_x, new_y = x+dx, y+dy
+            #self.locations[i].update(x=new_x, y=new_y)
+            #print(new_x, new_y)
+        
+            #for marble in self.marbles:
+            #    if marble:
+            #        direction_index = np.random.randint(6)
+            #        marble.change_direction(direction_index)
 
-            '''
-            x, y = self.locations[i].position
-            dx, dy = tmp[symbol]
-            new_x, new_y = x+dx, y+dy
-            self.locations[i].update(x=new_x, y=new_y)
-            print(new_x, new_y)
-            '''
 
 if __name__ == '__main__':
 
-    main = window()
-    main.init_window(random_pick=False, debug=True)
-    #pyglet.clock.schedule_interval(main.update, 1)
+    abalone_gui = window()
+    abalone_gui.init_window(random_pick=False, debug=True)
+    pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()

@@ -24,6 +24,10 @@
         "assets/default/white48px.png",
         "assets/default/black48px.png"
       ],
+      "arrows":[
+        "assets/default/black_arrow.png",
+        "assets/default/white_arrow.png"
+      ],
       "selected": "assets/default/selected.png"
     },
     "out_coordinates": [
