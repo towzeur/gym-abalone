@@ -98,5 +98,7 @@ while not done:
 
 - [X] detect pos on click
 - [X] add out_coordinates for removed marbles
-- [ ] 
+- [X] selected marble
+- [ ] board GUI
+- [ ] direction of movement 
 

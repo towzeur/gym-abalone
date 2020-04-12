@@ -23,7 +23,8 @@
       "players": [
         "assets/default/white48px.png",
         "assets/default/black48px.png"
-      ]
+      ],
+      "selected": "assets/default/selected.png"
     },
     "out_coordinates":[
       [
