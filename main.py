@@ -6,11 +6,18 @@ import time
 import json
 
 from gamelogic import AbaloneGame
-from gameutils import AbaloneUtils
+from gameutils import AbaloneUtils, debug
 
 
 class Marble:
     
+    DEBUG_STYLE = {
+        'font_name' : 'Arial', 
+        'font_size' : 24,
+        'anchor_x'  : 'center', 
+        'anchor_y'  : 'center'
+    }
+
     LABEL_COLORS = {
         'default' : (0, 0, 0, 255),
         1  : (0, 0, 0, 255),
@@ -41,11 +48,10 @@ class Marble:
         # label sprite if debug
         if self.debug:
             color = Marble.LABEL_COLORS.get(self.player_token, Marble.LABEL_COLORS['default'])
-            self.sprites['label']  = pyglet.text.Label(
-                font_name='Roboto', font_size=28,
-                color = color,
-                anchor_x='center', anchor_y='center',
-                batch=self.batch, group=self.groups[2]
+            self.sprites['label'] = pyglet.text.Label(
+                color=color,
+                batch=self.batch, group=self.groups[2],
+                **Marble.DEBUG_STYLE
             )
         
         # direction arrow sprite
@@ -57,7 +63,6 @@ class Marble:
         im = AbaloneUtils.get_im_centered(self.theme['sprites']['selected'])
         self.sprites['selected'] = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[2])
         self.sprites['selected'].visible = False
-
 
     def delete(self):
         for sprite_name, sprite in self.sprites.items(): 
@@ -80,8 +85,6 @@ class Marble:
                 self.sprites['label'].y = y_new
                 self.sprites['label'].text = str(pos)
             
-
-    
     def change_direction(self, direction_index):
         """ change the arrow angle to show up a new direction
 
@@ -92,7 +95,7 @@ class Marble:
                             \   /
                              \ /
                       3 ----- * ----- 0 
-                             /  \
+                             /  \ 
                             /    \ 
                            2      1
         """
@@ -106,6 +109,86 @@ class Marble:
     def unselect(self):
         self.sprites['selected'].visible = False
 
+    def take_out(self, out_index):
+        if out_index<len(self.theme['out_coordinates'][self.player]):
+            x_out, y_out = self.theme['out_coordinates'][self.player][out_index]
+            self.sprites['marble'].update(x=x_out, y=y_out)
+            self.sprites['arrow'].visible = False
+            self.sprites['selected'].visible = True
+
+
+class Header:
+
+    DISPLAYED_INFO = [
+        "player turn",
+        "episode",
+        "turns",
+        "elapsed time",
+        "game state"
+    ]
+
+    
+    DISPLAYED_INFO_DEFAULT_DATA = [
+        "0",
+        "0",
+        "1",
+        "0",
+        "WAITING"
+    ]
+
+    INFO_STYLE = {
+        'font_name' : 'Arial',
+        'font_size' : 12,
+        'bold'      : True,
+        'color'     : (255, 255, 255, 255),
+        'anchor_x'  : 'left', 
+        'anchor_y'  : 'center',
+    }
+
+    PADDING_X = 30 # pixel
+
+    def __init__(self, theme, batch, groups):
+        self.theme = theme
+        self.batch = batch
+        self.groups = groups
+
+        self.x0, self.y0 = 0, self.theme['dimension']['height']
+
+        # display header background sprite
+        im = AbaloneUtils.get_im_centered(self.theme['sprites']['header'], centered=False)
+        sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[0], x=self.x0, y=self.y0)
+        self.header_sprite = sprite
+        self.width, self.height = sprite.width, sprite.height
+
+        self.infos_sprites = None
+        self._init_sprites()
+
+        self.draw(Header.DISPLAYED_INFO_DEFAULT_DATA)
+
+    def _init_sprites(self):
+        self.infos_sprites = []
+        for _ in range(len(Header.DISPLAYED_INFO)):
+            info = pyglet.text.Label(batch=self.batch, group=self.groups[1], **Header.INFO_STYLE)
+            self.infos_sprites.append(info)
+
+    @debug
+    def draw(self, infos_tuple):
+        assert len(Header.DISPLAYED_INFO) == len(infos_tuple)
+
+        x =  0
+        y = self.y0 + self.height // 2
+
+        for i, (info_name, info_data) in enumerate(zip(Header.DISPLAYED_INFO, infos_tuple)):
+            x += Header.PADDING_X
+
+            displayed_string = f"{info_name} : {info_data}"
+
+            self.infos_sprites[i].text = displayed_string
+            self.infos_sprites[i].x = x 
+            self.infos_sprites[i].y = y
+
+            x += self.infos_sprites[i].content_width
+
 class window(pyglet.window.Window):
 
     def __init__(self, theme="default"):
@@ -117,7 +200,7 @@ class window(pyglet.window.Window):
         self.game = AbaloneGame()
 
         width  = self.theme['dimension']['width']
-        height = self.theme['dimension']['height']
+        height = self.theme['dimension']['height'] + self.theme['dimension']['header_height']
 
         display = pyglet.canvas.get_display()
         screen = display.get_default_screen()
@@ -135,22 +218,18 @@ class window(pyglet.window.Window):
 
         # set the background color to white
         pyglet.gl.glClearColor(1, 1, 1, 1)
-        self.batch = pyglet.graphics.Batch()
 
-        # create layers
+        # init the batch and group
+        self.batch = pyglet.graphics.Batch()
         self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(3)]
 
         # display the background 
         board_image = pyglet.image.load(self.theme['sprites']['board'])
         self.board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.groups[0])
-        
-        # selected sprite
-        selected_im = pyglet.image.load(self.theme['sprites']['selected'])
-        selected_im.anchor_x = selected_im.width  // 2
-        selected_im.anchor_y = selected_im.height // 2
-        self.selected_sprite = pyglet.sprite.Sprite(selected_im, batch=self.batch, group=self.groups[2])
-        self.selected_sprite.visible = False
 
+        # display the header
+        self.header = Header(self.theme, self.batch, self.groups)
+    
         self.marbles = None
 
     def init_window(self, variant_name='classical', random_pick=True, debug=True):
@@ -190,31 +269,24 @@ class window(pyglet.window.Window):
                 if np.random.rand() > .5:
                     marble.select()
 
+    @debug
     def on_mouse_press(self, x, y, button, modifiers):
         print(f'({x}, {y})')
 
+        # if the click was on a 
         pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
         if pos != -1:
-            token = self.game.action(pos)
-            if token != self.game.TOKEN_EMPTY:
-
+            
+            marble = self.marbles[pos]
+            if marble:
                 # show the slected border
-                self.mables[pos].select() 
+                marble.select() 
 
-                #x, y = self.theme['coordinates'][pos]
-
-                #player = token - 1
-                # find the cell
-                #for cell in self.players_cells[player]:
-                #    if cell['pos'] == pos:
-                #        pass
+                # damage it
+                damage_index = self.game.players_damages[marble.player]
+                marble.take_out(damage_index)
+                self.game.players_damages[marble.player] += 1
                     
-                #damage_index = self.game.players_damages[player]
-                #new_x, new_y = self.theme['out_coordinates'][player][damage_index]
-                #cell['sprite'].update(x=new_x, y=new_y)
-                # increase damage
-                #self.game.players_damages[player] += 1
-                #break
 
     def on_key_press(self, symbol, modifiers):
         
@@ -224,6 +296,9 @@ class window(pyglet.window.Window):
             key.DOWN  : (0, -1),
             key.UP    : (0, +1)
         }
+
+        infos_tuple = [0] * len(Header.DISPLAYED_INFO)
+        self.header.draw(infos_tuple)
 
         if symbol in tmp:
             pass
@@ -245,5 +320,5 @@ if __name__ == '__main__':
 
     abalone_gui = window()
     abalone_gui.init_window(random_pick=False, debug=True)
-    pyglet.clock.schedule_interval(abalone_gui.update, 1)
+    #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
