@@ -5,10 +5,11 @@
     <em>Abalone + gym</em>
 </p>
 
+
 ## Table of Contents
 
 - [Presentation](#Game-presentation)
-- [Environments](#community-maintained-environments)
+- [Environments](#Environments)
 - [Installation](#installation)
 - [Usage](#usage)
 - [TODO](#TODO)
@@ -74,6 +75,10 @@ There are several possible placements to start with, the most popular are :
 -   é
 
 In 1999, a number of top players from the Mind Sports Olympiad signed an agreement to use a different starting position (the Belgian daisy) to revitalize the game. This has been used for top tournaments since then, including the AbaCup.
+
+## Environments
+
+<img src="docs/screenshot/00.png" width=100% align="center" /></br>
 
 ## Installation
 

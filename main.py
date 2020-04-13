@@ -86,7 +86,8 @@ class Marble:
                 self.sprites['label'].text = str(pos)
             
     def change_direction(self, direction_index):
-        """ change the arrow angle to show up a new direction
+        """ 
+        change the arrow's sprite angle to match a new direction
 
         Args:
             direction_index (int): the direction index 0<=  <6
@@ -188,77 +189,69 @@ class Header:
             self.infos_sprites[i].y = y
 
             x += self.infos_sprites[i].content_width
-
-class window(pyglet.window.Window):
-
-    def __init__(self, theme="default"):
-
-        # set the theme 
-        self.theme = AbaloneUtils.get_theme(theme)
-
-        # init the game engine
-        self.game = AbaloneGame()
-
-        width  = self.theme['dimension']['width']
-        height = self.theme['dimension']['height'] + self.theme['dimension']['header_height']
-
-        display = pyglet.canvas.get_display()
-        screen = display.get_default_screen()
-
-        screen_width = screen.width
-        screen_height = screen.height
-
-        # init the window's constructor
-        super(window, self).__init__(screen=screen, width=width, height=height, vsync=False)
-
-        # center the window
-        x_centered = (screen_width - self.width) // 2
-        y_centered = (screen_height - self.height) // 2
-        self.set_location(x_centered, y_centered)
-
-        # set the background color to white
-        pyglet.gl.glClearColor(1, 1, 1, 1)
-
-        # init the batch and group
-        self.batch = pyglet.graphics.Batch()
-        self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(3)]
-
-        # display the background 
-        board_image = pyglet.image.load(self.theme['sprites']['board'])
-        self.board_sprite = pyglet.sprite.Sprite(board_image, batch=self.batch, group=self.groups[0])
-
-        # display the header
-        self.header = Header(self.theme, self.batch, self.groups)
     
+
+class Board:
+
+    def __init__(self, theme, batch, groups):
+        self.theme = theme
+        self.batch = batch
+        self.groups = groups 
+
+        # display the background
+        im = AbaloneUtils.get_im_centered(self.theme['sprites']['board'], centered=False)
+        self.sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[0])
+
         self.marbles = None
+        self.current_selected_pos = None
 
-    def init_window(self, variant_name='classical', random_pick=True, debug=True):
-        # reset the game
-        self.game.init_game(variant_name=variant_name, random_pick=random_pick)
 
+    def _reset_marbles(self):
         # reset players's sprites
         if self.marbles:
             for marble in self.marbles:
                 if marble:
                     marble.delete()
                     del marble
+            self.marbles = None
 
+    def _init_marbles(self, game, debug=True):
         # init marbles
         self.marbles = [None] * self.theme['locations']
-        for player in range(self.game.players):
-            for pos in self.game.players_sets[player]:
+        for player in range(game.players):
+            for pos in game.players_sets[player]:
                 marble = Marble(player, self.theme, self.batch, self.groups, debug=debug)
                 marble.change_position(pos)
                 self.marbles[pos] = marble
 
-    def on_draw(self):
-        self.clear()
-        self.batch.draw()
+    def init_board(self, game, debug=debug):
+        self._reset_marbles()
+        self._init_marbles(game)
+        self.current_selected = None
+    
+    def change_current_selected(self, pos):
+        marble = self.marbles[pos]
+        # if the cell is occupied
 
-    def update(self, dt):
-        # set random variant
-        self.init_window(random_pick=True, debug=False)
+        if marble:
+            if self.current_selected_pos is not None:
+                self.marbles[self.current_selected_pos].unselect()
+            marble.select()
+            self.current_selected_pos = pos
 
+        elif self.current_selected_pos is not None:
+            # update the current pos
+            old_pos = self.current_selected_pos
+            self.current_selected_pos = pos
+
+            # change the marble's position
+            self.marbles[old_pos].change_position(pos)
+
+            # update the list
+            self.marbles[pos], self.marbles[old_pos] = self.marbles[old_pos], self.marbles[pos]
+
+            
+    def demo(self):
         for marble in self.marbles:
             if marble:
                 # set random direction
@@ -269,23 +262,70 @@ class window(pyglet.window.Window):
                 if np.random.rand() > .5:
                     marble.select()
 
+
+class window(pyglet.window.Window):
+
+    def __init__(self, theme="default"):
+
+        # set the theme 
+        self.theme = AbaloneUtils.get_theme(theme) 
+        width  = self.theme['dimension']['width']
+        height = self.theme['dimension']['height'] + self.theme['dimension']['header_height']            
+
+        # ============================== pyglet ===============================
+
+        display = pyglet.canvas.get_display()
+        screen = display.get_default_screen()
+        # init the window's constructor
+        super(window, self).__init__(screen=screen, width=width, height=height, vsync=False)
+        self._center_window()
+        # set the background color to white
+        pyglet.gl.glClearColor(1, 1, 1, 1)
+        # init the batch and group
+        self.batch = pyglet.graphics.Batch()
+        self.groups = [pyglet.graphics.OrderedGroup(i) for i in range(3)]
+
+        # ============================== game component ==============================
+
+        self.game = AbaloneGame() # game engine
+        self.header = Header(self.theme, self.batch, self.groups)
+        self.board = Board(self.theme, self.batch, self.groups)
+
+    def _center_window(self):
+        # center the window
+        x_centered = (self.screen.width - self.width) // 2
+        y_centered = (self.screen.height - self.height) // 2
+        self.set_location(x_centered, y_centered)
+
+    def init_window(self, variant_name='classical', random_pick=True, debug=True):
+        # init the game
+        self.game.init_game(variant_name=variant_name, random_pick=random_pick)
+        # init the board
+        self.board.init_board(self.game, debug=debug)
+
+    def on_draw(self):
+        self.clear()
+        self.batch.draw()
+
+    def update(self, dt):
+        # set random variant
+        self.init_window(random_pick=True, debug=False)
+
+        self.board.demo()
+
     @debug
     def on_mouse_press(self, x, y, button, modifiers):
         print(f'({x}, {y})')
 
-        # if the click was on a 
         pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
-        if pos != -1:
-            
-            marble = self.marbles[pos]
-            if marble:
-                # show the slected border
-                marble.select() 
 
-                # damage it
-                damage_index = self.game.players_damages[marble.player]
-                marble.take_out(damage_index)
-                self.game.players_damages[marble.player] += 1
+        if pos != -1:
+            self.board.change_current_selected(pos)
+
+            # damage it
+            #damage_index = self.game.players_damages[marble.player]
+            #marble.take_out(damage_index)
+            #game.players_damages[marble.player] += 1
                     
 
     def on_key_press(self, symbol, modifiers):

@@ -27,10 +27,12 @@ class AbaloneGame:
         self.positions = None
         self.variant = None
         self.players = 0
+
+        # var for the game logic
         self.players_sets = []
         self.players_damaged_sets = []
-
-        #self.
+        self.current_player = None
+        self.turns_count = 0
         #self.
 
     def init_game(self, variant_name='classical', random_pick=False):
