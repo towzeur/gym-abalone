@@ -26,10 +26,11 @@ class AbaloneUtils:
         return AbaloneUtils._safe_json_pick(variant_name, 'assets/variants.json', 'classical', random_pick)
     
     @staticmethod
-    def get_im_centered(im_path):
+    def get_im_centered(im_path, centered=True):
         im = pyglet.image.load(im_path)
-        im.anchor_x = im.width  // 2
-        im.anchor_y = im.height // 2
+        if centered:
+            im.anchor_x = im.width  // 2
+            im.anchor_y = im.height // 2
         return im
 
     @staticmethod
@@ -77,3 +78,11 @@ class AbaloneUtils:
                     pos +=  theme['rows'][row]
                     break
         return -1
+
+def debug(f):
+    def f_wrapped(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except Exception as e:
+            print(e)
+    return f_wrapped

@@ -16,7 +16,8 @@
     "dimension": {
       "width": 880,
       "height": 600,
-      "marble_radius": 24
+      "marble_radius": 24,
+      "header_height":30
     },
     "sprites": {
       "board": "assets/default/board_880x600.png",
@@ -28,7 +29,8 @@
         "assets/default/black_arrow.png",
         "assets/default/white_arrow.png"
       ],
-      "selected": "assets/default/selected.png"
+      "selected": "assets/default/selected.png",
+      "header": "assets/default/header.png"
     },
     "out_coordinates": [
       [

@@ -30,6 +30,9 @@ class AbaloneGame:
         self.players_sets = []
         self.players_damaged_sets = []
 
+        #self.
+        #self.
+
     def init_game(self, variant_name='classical', random_pick=False):
 
         self.board = self.new_board()
