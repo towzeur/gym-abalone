@@ -1,6 +1,10 @@
 {
   "default": {
     "players": 2,
+    "players_name":[
+      "white",
+      "black"
+    ],
     "locations": 61,
     "rows": [
       5,
@@ -17,7 +21,7 @@
       "width": 880,
       "height": 600,
       "marble_radius": 24,
-      "header_height":30
+      "header_height": 30
     },
     "sprites": {
       "board": "assets/default/board_880x600.png",
