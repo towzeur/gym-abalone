@@ -20,13 +20,12 @@ class Marble:
 
     LABEL_COLORS = {
         'default' : (0, 0, 0, 255),
-        1  : (0, 0, 0, 255),
-        2  : (255, 255, 255, 255)
+        0  : (0, 0, 0, 255),
+        1  : (255, 255, 255, 255)
     }
     
     def __init__(self, player, theme, batch, groups, debug=True):
         self.player = player
-        self.player_token = player + 1
 
         self.theme = theme
         self.batch = batch
@@ -47,7 +46,7 @@ class Marble:
 
         # label sprite if debug
         if self.debug:
-            color = Marble.LABEL_COLORS.get(self.player_token, Marble.LABEL_COLORS['default'])
+            color = Marble.LABEL_COLORS.get(self.player, Marble.LABEL_COLORS['default'])
             self.sprites['label'] = pyglet.text.Label(
                 color=color,
                 batch=self.batch, group=self.groups[2],
@@ -103,6 +102,9 @@ class Marble:
         angle = direction_index * 60 #(360 / 6)
         self.sprites['arrow'].update(rotation=angle)
         self.sprites['arrow'].visible = True
+
+    def hide_arrow(self):
+        self.sprites['arrow'].visible = False
     
     def select(self):
         self.sprites['selected'].visible = True
@@ -164,18 +166,14 @@ class Header:
         self.infos_sprites = None
         self._init_sprites()
 
-        self.draw(Header.DISPLAYED_INFO_DEFAULT_DATA)
-
     def _init_sprites(self):
         self.infos_sprites = []
         for _ in range(len(Header.DISPLAYED_INFO)):
             info = pyglet.text.Label(batch=self.batch, group=self.groups[1], **Header.INFO_STYLE)
             self.infos_sprites.append(info)
 
-    @debug
     def draw(self, infos_tuple):
-        assert len(Header.DISPLAYED_INFO) == len(infos_tuple)
-
+        #assert len(Header.DISPLAYED_INFO) == len(infos_tuple)
         x =  0
         y = self.y0 + self.height // 2
 
@@ -189,8 +187,20 @@ class Header:
             self.infos_sprites[i].y = y
 
             x += self.infos_sprites[i].content_width
-    
 
+    def get_infos_tuple(self, game):
+        infos_tuple = [None] * len(Header.DISPLAYED_INFO)
+        infos_tuple[0] = self.theme["players_name"][game.current_player]
+        infos_tuple[1] = 0 #"episode",
+        infos_tuple[2] = game.turns_count
+        infos_tuple[3] = 0 #"elapsed time",
+        infos_tuple[4] = 'TODO' # '"game state"
+        return infos_tuple
+
+    def update(self, game):
+        infos_tuple = self.get_infos_tuple(game)
+        self.draw(infos_tuple)
+    
 class Board:
 
     def __init__(self, theme, batch, groups):
@@ -203,17 +213,17 @@ class Board:
         self.sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[0])
 
         self.marbles = None
-        self.current_selected_pos = None
-
+        self.marbles_out = None
 
     def _reset_marbles(self):
         # reset players's sprites
         if self.marbles:
-            for marble in self.marbles:
+            for marble in self.marbles + self.marbles_out:
                 if marble:
                     marble.delete()
                     del marble
             self.marbles = None
+            self.marbles_out = None
 
     def _init_marbles(self, game, debug=True):
         # init marbles
@@ -223,34 +233,55 @@ class Board:
                 marble = Marble(player, self.theme, self.batch, self.groups, debug=debug)
                 marble.change_position(pos)
                 self.marbles[pos] = marble
+        self.marbles_out = []
+
 
     def init_board(self, game, debug=debug):
         self._reset_marbles()
-        self._init_marbles(game)
-        self.current_selected = None
-    
-    def change_current_selected(self, pos):
-        marble = self.marbles[pos]
-        # if the cell is occupied
+        self._init_marbles(game, debug=debug)
 
-        if marble:
-            if self.current_selected_pos is not None:
-                self.marbles[self.current_selected_pos].unselect()
-            marble.select()
-            self.current_selected_pos = pos
 
-        elif self.current_selected_pos is not None:
-            # update the current pos
-            old_pos = self.current_selected_pos
-            self.current_selected_pos = pos
+    def update(self, modifications):
+        if modifications is None:
+            return
+        print('def update(self, modifications):')
 
-            # change the marble's position
-            self.marbles[old_pos].change_position(pos)
+        # it's important to start with this becayse the prev_selec will change !
+        if 'new_turn' in modifications:
+            self.marbles[modifications['new_turn']].unselect()
+            for marble in self.marbles:
+                if marble:
+                    marble.hide_arrow()
 
-            # update the list
-            self.marbles[pos], self.marbles[old_pos] = self.marbles[old_pos], self.marbles[pos]
+        # change selected marble
+        if 'selected' in modifications:
+            old_pos, new_pos = modifications['selected']
+            if old_pos is not None and self.marbles[old_pos] is not None:
+                self.marbles[old_pos].unselect()
+            self.marbles[new_pos].select()
+            print('*'*80)
 
-            
+        if 'damage' in modifications:
+            old_pos, damage_index = modifications['damage']
+            self.marbles[old_pos].take_out(damage_index)
+            self.marbles_out.append(self.marbles[old_pos])
+            self.marbles[old_pos] = None
+
+            #self.prev_selected.unselect()
+        
+        if 'moves' in modifications:
+            for old_pos, new_pos, angle in modifications['moves']:
+                # swap
+                self.marbles[new_pos], self.marbles[old_pos] = self.marbles[old_pos], self.marbles[new_pos]
+                print('**', old_pos, new_pos, angle)
+                # update sprites
+                self.marbles[new_pos].change_position(new_pos)
+                self.marbles[new_pos].change_direction(angle)
+
+       
+
+        print()
+
     def demo(self):
         for marble in self.marbles:
             if marble:
@@ -297,11 +328,15 @@ class window(pyglet.window.Window):
         y_centered = (self.screen.height - self.height) // 2
         self.set_location(x_centered, y_centered)
 
-    def init_window(self, variant_name='classical', random_pick=True, debug=True):
+    def start(self, player=0, random_player=True, variant_name='classical', random_pick=True, debug=True):
         # init the game
-        self.game.init_game(variant_name=variant_name, random_pick=random_pick)
+        self.game.init_game(
+            player=player, random_player=True,
+            variant_name=variant_name, random_pick=random_pick
+        )
         # init the board
         self.board.init_board(self.game, debug=debug)
+        self.header.update(self.game)
 
     def on_draw(self):
         self.clear()
@@ -310,23 +345,16 @@ class window(pyglet.window.Window):
     def update(self, dt):
         # set random variant
         self.init_window(random_pick=True, debug=False)
-
         self.board.demo()
 
-    @debug
     def on_mouse_press(self, x, y, button, modifiers):
         print(f'({x}, {y})')
-
         pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
-
         if pos != -1:
-            self.board.change_current_selected(pos)
-
-            # damage it
-            #damage_index = self.game.players_damages[marble.player]
-            #marble.take_out(damage_index)
-            #game.players_damages[marble.player] += 1
-                    
+            modifications = self.game.action_handler(pos)
+            print(modifications)
+            self.board.update(modifications)
+            self.header.update(self.game)
 
     def on_key_press(self, symbol, modifiers):
         
@@ -359,6 +387,6 @@ class window(pyglet.window.Window):
 if __name__ == '__main__':
 
     abalone_gui = window()
-    abalone_gui.init_window(random_pick=False, debug=True)
+    abalone_gui.start(random_pick=False, debug=False)
     #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
