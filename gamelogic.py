@@ -21,6 +21,8 @@ class AbaloneGame:
 
     ACTIONS = [RIGHT, DOWN_RIGHT, DOWN_LEFT, LEFT, UP_LEFT, UP_RIGHT]
 
+    ACTIONS_NAME = ['→', '↘', '↙', '←', '↖', '↗']
+
     # tokens
     TOKEN_VOID     = -2
     TOKEN_EMPTY    = -1
@@ -151,6 +153,47 @@ class AbaloneGame:
         self.current_player = (self.current_player + 1) % self.players
         self.turns_count += 1
 
+    @staticmethod
+    def check_inline_move(dr, dc):
+        """
+        In Abalone, there is 3 directions :
+        (RIGHT-LEFT) | (DOWN_RIGHT-UP_LEFT) | (DOWN_LEFT-UP_RIGHT)
+        (←    -   →) | (↙        -       ↗) | (↙       -        ↗)
+
+        Checks if the move given by dr (detla row) and dc (delta col) 
+        follows a unique direction move. If this is the case, it returns 
+        the step taken in such direction. Otherwise it returns None.
+            
+        Returns:
+            tuple (step, direction_index)
+                step            : the number of step in the direction
+                direction_index : the index of the direction (0< <=5)
+            None 
+                if the deplacement is not in a unique direction
+
+        Examples:
+            >>> print(AbaloneGame.check_inline_move(1, 0))
+            (1, 1)
+            >>> print(AbaloneGame.check_inline_move(-3, 3))
+            (3, 5)
+            >>> print(AbaloneGame.check_inline_move(2, -1))
+            None
+        """
+        # RIGHT or LEFT
+        if dr==0:
+            return (np.abs(dc), 0 if np.sign(dc)==1 else 3)
+        # DOWN_RIGHT or UP_LEFT
+        elif dc==0:
+            return (np.abs(dr), 1 if np.sign(dr)==1 else 4)
+        # DOWN_LEFT or UP_RIGHT
+        elif np.abs(dr)==np.abs(dc) and np.sign(dr)!=np.sign(dc):
+            return (np.abs(dr), 2 if np.sign(dr)==1 else 5)
+    
+    def swap_coords(self, r0, c0, r1, c1):
+        tmp = self.board[r0, c0]
+        self.board[r0, c0] = self.board[r1, c1]
+        self.board[r1, c1] = tmp
+
     def _action_change_current_pos(self, pos):
         print('_action_change_current_pos')
         out = {'selected' : (self.current_pos, pos)}
@@ -159,30 +202,51 @@ class AbaloneGame:
 
     def _action_move(self, r, c):
         print('_action_move')
+
         out = {}
-
         r_curr, c_curr = self.positions[self.current_pos]
-        neighbors_curr = self.get_neighbors(r_curr, c_curr)
-        
-        # print('*', (r_curr, c_curr), (r,c), neighbors_curr)
-        # check for single move:
-        if (r, c) in neighbors_curr:
-            # swap
-            self.board[r, c], self.board[r_curr, c_curr] = self.board[r_curr, c_curr], self.board[r, c]
-            out['moves'] = [(
-                self.get_pos_from_coords(r_curr, c_curr),       # old_pos
-                self.get_pos_from_coords(r, c),                 # new pos
-                AbaloneGame.ACTIONS.index((r-r_curr, c-c_curr)) # angle direction
-            )]
-            out['new_turn'] = self.current_pos
-            self.next_turn()
+        dr, dc = r-r_curr, c-c_curr
 
-        # check for 2 move
-        elif False:
-            pass
+        # =========================================================================
+        # RULE | An "In-line" Move: marbles are moved as a column into a free space
+        # =========================================================================
+        inline = self.check_inline_move(dr, dc)
+        if inline:
+            step, direction_index = inline
+            r_step, c_step = AbaloneGame.ACTIONS[direction_index]
 
-        # check for 3 move
-        elif False:
+            print(f'dr={dr} dc={dc} | {step}{AbaloneGame.ACTIONS_NAME[direction_index]}')
+
+            # =====================================================================
+            # RULE | At any turn, no more than 3 friendly marbles can be moved
+            # =====================================================================
+            if step > 3:
+                return out
+     
+            # find the related neighbors in the direction
+            related = [(r_curr+n*r_step, c_curr+n*c_step) for n in reversed(range(step))]
+
+            # if the all the related marbles belongs to the same player
+            if all([self.board[rr, cr] == self.current_player for rr, cr in related]):
+                out['moves'] = []
+                new_r, new_c = r, c
+                for old_r, old_c in related:
+                    # swap
+                    self.swap_coords(old_r, old_c, new_r, new_c)
+                    # log the move for GUI
+                    out['moves'].append((
+                        self.get_pos_from_coords(old_r, old_c),
+                        self.get_pos_from_coords(new_r, new_c),
+                        direction_index
+                    ))
+                    new_r, new_c = old_r, old_c
+                out['new_turn'] = self.current_pos
+                self.next_turn()
+
+        # =========================================================================
+        # RULE | A 'Side step' move: Marbles are moved sideways into adjacent free spaces.
+        # ========================================================================= 
+        else:
             pass
 
         return out
@@ -191,7 +255,7 @@ class AbaloneGame:
         r, c = self.get_coords_from_pos(pos)
         token = self.board[r, c]
 
-        print(token, self.current_pos, self.current_player)
+        #print(token, self.current_pos, self.current_player)
 
         # if we clicked on a empty position
         if token == AbaloneGame.TOKEN_EMPTY:
@@ -211,16 +275,5 @@ class AbaloneGame:
             else:
                 pass
 
-
-
 if __name__ == '__main__':
-
-    
     AbaloneGame()
-
-
-
-
-
-
-

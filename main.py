@@ -244,7 +244,6 @@ class Board:
     def update(self, modifications):
         if modifications is None:
             return
-        print('def update(self, modifications):')
 
         # it's important to start with this becayse the prev_selec will change !
         if 'new_turn' in modifications:
@@ -259,7 +258,6 @@ class Board:
             if old_pos is not None and self.marbles[old_pos] is not None:
                 self.marbles[old_pos].unselect()
             self.marbles[new_pos].select()
-            print('*'*80)
 
         if 'damage' in modifications:
             old_pos, damage_index = modifications['damage']
@@ -273,14 +271,9 @@ class Board:
             for old_pos, new_pos, angle in modifications['moves']:
                 # swap
                 self.marbles[new_pos], self.marbles[old_pos] = self.marbles[old_pos], self.marbles[new_pos]
-                print('**', old_pos, new_pos, angle)
                 # update sprites
                 self.marbles[new_pos].change_position(new_pos)
                 self.marbles[new_pos].change_direction(angle)
-
-       
-
-        print()
 
     def demo(self):
         for marble in self.marbles:
@@ -344,7 +337,7 @@ class window(pyglet.window.Window):
 
     def update(self, dt):
         # set random variant
-        self.init_window(random_pick=True, debug=False)
+        self.start(random_pick=True, debug=False)
         self.board.demo()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -365,11 +358,11 @@ class window(pyglet.window.Window):
             key.UP    : (0, +1)
         }
 
-        infos_tuple = [0] * len(Header.DISPLAYED_INFO)
-        self.header.draw(infos_tuple)
 
-        if symbol in tmp:
-            pass
+        #self.header.draw(infos_tuple)
+
+        #if symbol in tmp:
+        #    pass
             #self.init_window()
             
             #x, y = self.locations[i].position
@@ -387,6 +380,6 @@ class window(pyglet.window.Window):
 if __name__ == '__main__':
 
     abalone_gui = window()
-    abalone_gui.start(random_pick=False, debug=False)
+    abalone_gui.start(random_pick=True, debug=False)
     #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
