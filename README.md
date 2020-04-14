@@ -38,6 +38,12 @@ There is two possible directions :
 -   Sideways (the marbles each move a square sideways, which counts as one movement).
 -   Both straight and sideways
 
+
+| Moves               | Diagram                                           |
+| :---:               | :---:                                             |
+| An "In-line" Move: Marbles are moved as a column into a free space      | <img src="docs/rules/moves/In-line.png" width=100%>   |
+| A ‘Side step’ move: Marbles are moved sideways into adjacent freespaces | <img src="docs/rules/moves/Side-step.png" width=100%> |
+
 #### Pushing-the-opponent
 
 **Sumito**
@@ -99,11 +105,10 @@ while not done:
     env.render()
 ```
 
-## TODO
+## Milestone 
 
 - [X] detect pos on click
-- [X] add out_coordinates for removed marbles
-- [X] selected marble
-- [ ] board GUI
-- [ ] direction of movement 
+- [X] detect pos on click
+- [] add out_coordinates for removed marbles
+- [] selected marble
 
