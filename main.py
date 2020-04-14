@@ -83,6 +83,7 @@ class Marble:
                 self.sprites['label'].x = x_new
                 self.sprites['label'].y = y_new
                 self.sprites['label'].text = str(pos)
+                self.sprites['label'].draw()
             
     def change_direction(self, direction_index):
         """ 
@@ -113,11 +114,21 @@ class Marble:
         self.sprites['selected'].visible = False
 
     def take_out(self, out_index):
-        if out_index<len(self.theme['out_coordinates'][self.player]):
-            x_out, y_out = self.theme['out_coordinates'][self.player][out_index]
-            self.sprites['marble'].update(x=x_out, y=y_out)
-            self.sprites['arrow'].visible = False
-            self.sprites['selected'].visible = True
+        try:
+            if out_index < len(self.theme['out_coordinates'][self.player]):
+                print('checkpoint 2')
+                x_out, y_out = self.theme['out_coordinates'][self.player][out_index]
+                self.sprites['marble'].update(x=x_out, y=y_out)
+
+                self.sprites['arrow'].visible = False
+                self.sprites['selected'].visible = False
+                if self.debug:
+                    self.sprites['label'].x = x_out
+                    self.sprites['label'].y = y_out
+                    self.sprites['label'].text = f'.{out_index}'
+                    self.sprites['label'].visible = False
+        except Exception as e:
+            print(e)
 
 
 class Header:
@@ -260,12 +271,10 @@ class Board:
             self.marbles[new_pos].select()
 
         if 'damage' in modifications:
-            old_pos, damage_index = modifications['damage']
-            self.marbles[old_pos].take_out(damage_index)
+            old_pos, out_index = modifications['damage']
+            self.marbles[old_pos].take_out(out_index)
             self.marbles_out.append(self.marbles[old_pos])
             self.marbles[old_pos] = None
-
-            #self.prev_selected.unselect()
         
         if 'moves' in modifications:
             for old_pos, new_pos, angle in modifications['moves']:
@@ -350,8 +359,7 @@ class window(pyglet.window.Window):
             self.header.update(self.game)
 
     def on_key_press(self, symbol, modifiers):
-        
-        tmp = {
+        handlers = {
             key.LEFT  : (-1, 0),
             key.RIGHT : (+1, 0),
             key.DOWN  : (0, -1),
@@ -359,27 +367,9 @@ class window(pyglet.window.Window):
         }
 
 
-        #self.header.draw(infos_tuple)
-
-        #if symbol in tmp:
-        #    pass
-            #self.init_window()
-            
-            #x, y = self.locations[i].position
-            #dx, dy = tmp[symbol]
-            #new_x, new_y = x+dx, y+dy
-            #self.locations[i].update(x=new_x, y=new_y)
-            #print(new_x, new_y)
-        
-            #for marble in self.marbles:
-            #    if marble:
-            #        direction_index = np.random.randint(6)
-            #        marble.change_direction(direction_index)
-
-
 if __name__ == '__main__':
 
     abalone_gui = window()
-    abalone_gui.start(random_pick=True, debug=False)
+    abalone_gui.start(variant_name='anglattack', random_pick=False, debug=True)
     #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
