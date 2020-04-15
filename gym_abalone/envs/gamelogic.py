@@ -149,7 +149,7 @@ class AbaloneGame:
 
     
     def decompose_directions(self, r, c):
-        """
+        r"""
         return the decomposition of (r, c) in the 3 directions : (W - E) 
 
         0      - - - - -      |      \ \ \ \ \       |        / / / / /
