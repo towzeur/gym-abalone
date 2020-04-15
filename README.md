@@ -105,10 +105,10 @@ while not done:
     env.render()
 ```
 
-## Milestone 
+## Milestones
 
-- [X] detect pos on click
-- [X] detect pos on click
-- [] add out_coordinates for removed marbles
-- [] selected marble
+- [X] 15/04/20 gameengine + gamegui fully works
+- [.] gym integration
+- [.] random agent
+- [.] reinforcement learning agent
 
