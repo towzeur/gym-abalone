@@ -1,5 +1,5 @@
 import numpy as np
-from gameutils import AbaloneUtils
+from ..common.gameutils import AbaloneUtils
  
 class AbaloneGame:
 

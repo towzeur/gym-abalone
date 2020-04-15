@@ -1,15 +1,18 @@
 import json
 import random
 import pyglet
+import os
+from pathlib import Path
 
 class AbaloneUtils:
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def _safe_json_pick(target, filename, default, random_pick):
-        with open(filename, 'r') as f:
+
+        path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+        path =  path.joinpath(filename)
+  
+        with open(path, 'r') as f:
             options = json.load(f)
         if random_pick:
             return random.choice(list(options.values()))
@@ -27,7 +30,12 @@ class AbaloneUtils:
     
     @staticmethod
     def get_im_centered(im_path, centered=True):
-        im = pyglet.image.load(im_path)
+
+        # resolve path
+        path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+        path =  path.joinpath(im_path)
+        
+        im = pyglet.image.load(path)
         if centered:
             im.anchor_x = im.width  // 2
             im.anchor_y = im.height // 2
@@ -79,10 +87,11 @@ class AbaloneUtils:
                     break
         return -1
 
-def debug(f):
-    def f_wrapped(*args, **kwargs):
-        try:
-            f(*args, **kwargs)
-        except Exception as e:
-            print(e)
-    return f_wrapped
+    @staticmethod
+    def debug(f):
+        def f_wrapped(*args, **kwargs):
+            try:
+                f(*args, **kwargs)
+            except Exception as e:
+                print(e)
+        return f_wrapped

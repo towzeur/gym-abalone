@@ -121,7 +121,7 @@ def process():
         configs[name] = config
 
     # Writing JSON data
-    with open('../assets/variants.json', 'w') as f:
+    with open('../gym_abalone/game/assets/variants.json', 'w') as f:
         json.dump(configs, f, indent=2)
 
 if __name__ == '__main__':

@@ -106,11 +106,15 @@ Another important rule in Abalone concerns "Pac" situations. In these situations
 
 ### Observations
 
-The observations is an encoded numpy arrays of size (11, 11, 3). These arrays contain signed 8-bit integer values in the [-128, 127] range. The choice of 8-bit integer values was made because we only need a couple of integer to represents the different value of the cells. 
-PLAYER : 0, 1, ...  (up to 127) 
-EMPTY  : -1
-VOID   : -2 
-these tokens can be customised.
+The observations is an encoded numpy arrays of size (11, 11). These arrays contain signed 8-bit integer values in the [-128, 127] range. 
+The choice of 8-bit integer values was made because we only need a couple of integer to represents the different value of the cells. 
+
+| Token      | Value                   |
+| :---:      | :---:                   |
+| PLAYER     | 0, 1, ...  (up to 127)  |
+| EMPTY      | -1                      |
+| VOID       | -2                      |
+
 
 ### Actions
 
