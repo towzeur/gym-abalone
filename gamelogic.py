@@ -29,6 +29,8 @@ class AbaloneGame:
 
     BOARD_SIZE = 11
 
+    LIFES = 6
+
     def __init__(self):
         self.board = None
         self.positions = None
@@ -43,6 +45,7 @@ class AbaloneGame:
         self.turns_count = None
         self.current_player = None
         self.current_pos = None
+        self.game_over = False
         
 
     def init_game(self, player=0, random_player=True, variant_name='classical', random_pick=False):
@@ -76,6 +79,7 @@ class AbaloneGame:
         self.turns_count = 0
         self.current_player = np.random.randint(self.players) if random_player else player
         self.current_pos = None
+        self.game_over = False
 
     # =========================================================================
     #                           BOARD RELATED 
@@ -143,6 +147,32 @@ class AbaloneGame:
     def get_neighbors(r, c):
         return [(r+dr, c+dc) for (dr, dc) in AbaloneGame.ACTIONS]
 
+    
+    def decompose_directions(self, r, c):
+        """
+        return the decomposition of (r, c) in the 3 directions : (W - E) 
+
+        0      - - - - -      |      \ \ \ \ \       |        / / / / /
+        1     - - - - - -     |     \ \ \ \ \ \      |       / / / / / /
+        2    - - - - - - -    |    \ \ \ \ \ \ \     |      / / / / / / / 
+        3   - - - - - - - -   |   \ \ \ \ \ \ \ \    |     / / / / / / / /
+        4  - - - - - - - - -  |  \ \ \ \ \ \ \ \ \   |    / / / / / / / / /
+        5   - - - - - - - -   |   \ \ \ \ \ \ \ \ 9  |   0 / / / / / / / / 
+        6    - - - - - - -    |    \ \ \ \ \ \ \  8  |   1  / / / / / / /
+        7     - - - - - -     |     \ \ \ \ \ \   7  |   2   / / / / / /
+        8      - - - - -      |      \ \ \ \ \    6  |   3    / / / / /
+                              |       0 1 2 3 4   5  |       4 5 6 7 8
+
+        Args:
+            r (int) : the board
+            c (int) : the token to search for
+
+        Returns:
+            (tuple): the list with all the position (tuple)
+        """
+        return (r, c, r+c-4)
+
+
     # =========================================================================
     #                           GAME RELATED 
     # =========================================================================
@@ -151,6 +181,7 @@ class AbaloneGame:
         self.current_pos = None
         self.current_player = (self.current_player + 1) % self.players
         self.turns_count += 1
+
 
     @staticmethod
     def check_inline_move(dr, dc):
@@ -187,11 +218,55 @@ class AbaloneGame:
         # DOWN_LEFT or UP_RIGHT
         elif np.abs(dr)==np.abs(dc) and np.sign(dr)!=np.sign(dc):
             return (np.abs(dr), 2 if np.sign(dr)==1 else 5)
+
+    
+    def check_sidestep_move(self, r0, c0, r1, c1):
+
+        dr, dc = r1-r0, c1-c0
+
+        tmp      = [self.check_inline_move(dr-dr1, dc-dc1) for dr1, dc1 in self.ACTIONS]
+        decomp_0 = self.decompose_directions(r0, c0)
+        decomp_1 = self.decompose_directions(r1, c1)
+        decomp   = [a-b for a,b in zip(decomp_1, decomp_0)]
+
+        for i in range(len(decomp)):
+            direction_distance = decomp[i]
+            # if the direction are 1 deplacement appart
+            if np.abs(direction_distance)==1:
+
+                # reach the direction
+                act_p = ((1,2), (0,5), (0,1)) # positive
+                act_n = ((4,5), (3,2), (3,4)) # negative
+                
+                # there is 2 way of teaching it, take the right one
+                sm0, sm1 = act_p[i] if direction_distance>0 else act_n[i]
+                # 1 step sideway
+                side_move = sm0 if (tmp[sm0][0]<tmp[sm1][0]) else sm1
+                dr_step, dc_step = AbaloneGame.ACTIONS[side_move]
+
+                # inline move
+                inline_step, inline_move = tmp[side_move]
+                dr_inline, dc_inline = AbaloneGame.ACTIONS[inline_move]
+
+                # no more than 3 marbles cant be pushed
+                # At any turn, no more than 3 friendly marbles can be moved
+                if inline_step < 3:
+
+                    old_poss = [(r0+dr_inline*s, c0+dc_inline*s) for s in range(inline_step+1)]
+                    new_poss = [(r0+dr_step+dr_inline*s, c0+dc_step+dc_inline*s) for s in range(inline_step+1)]
+                    
+                    connected = all(self.board[r_, c_] == self.current_player for (r_, c_) in old_poss)
+                    free      = all(self.board[r_, c_] == AbaloneGame.TOKEN_EMPTY for (r_, c_) in new_poss)
+                    
+                    if connected and free:
+                        print(AbaloneGame.ACTIONS_NAME[side_move], inline_step, AbaloneGame.ACTIONS_NAME[inline_move])
+                        return old_poss, new_poss, side_move
+
     
     def swap_coords(self, r0, c0, r1, c1):
         self.board[r0, c0], self.board[r1, c1] = self.board[r1, c1], self.board[r0, c0]
 
-    def swap_many_coords(self, new_r, new_c, old_coords, direction_index):
+    def swap_inline(self, new_r, new_c, old_coords, direction_index):
         # push the marbles
         out = []
         for old_r, old_c in old_coords:
@@ -205,6 +280,17 @@ class AbaloneGame:
             ))
             new_r, new_c = old_r, old_c
         return out
+
+    def swap_sidestep(self, old_poss, new_poss, direction_index):
+        out = []
+        for (r_old, c_old), (r_new, c_new) in zip(old_poss, new_poss):
+            self.swap_coords(r_old, c_old, r_new, c_new)
+            out.append((
+                self.get_pos_from_coords(r_old, c_old),
+                self.get_pos_from_coords(r_new, c_new),
+                direction_index
+            ))
+        return out
     
     def eject(self, r, c):
         print('EJECT')
@@ -213,6 +299,9 @@ class AbaloneGame:
         out = (self.get_pos_from_coords(r, c), self.players_damages[damaged_player])
         self.players_damages[damaged_player] += 1
         self.board[r, c] = AbaloneGame.TOKEN_EMPTY
+        # check if the game is over
+        self.game_over = any(life == AbaloneGame.LIFES for life in self.players_damages) 
+
         return out
 
     # =========================================================================
@@ -226,6 +315,7 @@ class AbaloneGame:
         return out
 
     def _action_move(self, r, c):
+
         print('_action_move')
 
         out = {}
@@ -251,9 +341,12 @@ class AbaloneGame:
             # find the related neighbors in the direction
             related = [(r_curr+n*r_step, c_curr+n*c_step) for n in reversed(range(step))]
 
-            # if the all the related marbles belongs to the same player
+            # if all the related marbles belongs to the same player
             if all([self.board[rr, cr] == self.current_player for rr, cr in related]):
-                out['moves'] = self.swap_many_coords(r, c, related, direction_index)
+
+
+
+                out['moves'] = self.swap_inline(r, c, related, direction_index)
                 out['new_turn'] = self.current_pos
                 self.next_turn()
 
@@ -261,7 +354,16 @@ class AbaloneGame:
         # RULE | A 'Side step' move: Marbles are moved sideways into adjacent free spaces.
         # ========================================================================= 
         else:
-            pass
+            print('SIDE STEP')
+
+            sidestep = self.check_sidestep_move(r_curr, c_curr, r, c)
+            print("out", sidestep)
+
+            if sidestep:
+                old_poss, new_poss, side_move = sidestep
+                out['moves'] = self.swap_sidestep(old_poss, new_poss, side_move)
+                out['new_turn'] = self.current_pos
+                self.next_turn()
 
         return out
 
@@ -311,13 +413,18 @@ class AbaloneGame:
 
                     # push the marbles
                     new_r, new_c = (r_ejc, c_ejc) if ejected else (r_i, c_i)
-                    out['moves'] = self.swap_many_coords(new_r, new_c, related, direction_index)
+                    out['moves'] = self.swap_inline(new_r, new_c, related, direction_index)
                     out['new_turn'] = self.current_pos
                     self.next_turn()
 
         return out
 
     def action_handler(self, pos):
+        # do nothing if the game is over !
+        if self.game_over:
+            print('GAME OVER !')
+            return
+
         r, c = self.get_coords_from_pos(pos)
         token = self.board[r, c]
         #print(token, self.current_pos, self.current_player)
