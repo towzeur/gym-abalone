@@ -259,7 +259,7 @@ class AbaloneGame:
                     free      = all(self.board[r_, c_] == AbaloneGame.TOKEN_EMPTY for (r_, c_) in new_poss)
                     
                     if connected and free:
-                        print(AbaloneGame.ACTIONS_NAME[side_move], inline_step, AbaloneGame.ACTIONS_NAME[inline_move])
+                        #print(AbaloneGame.ACTIONS_NAME[side_move], inline_step, AbaloneGame.ACTIONS_NAME[inline_move])
                         return old_poss, new_poss, side_move
 
     
@@ -293,7 +293,7 @@ class AbaloneGame:
         return out
     
     def eject(self, r, c):
-        print('EJECT')
+        #print('EJECT')
         damaged_player = self.board[r, c]
         # log for GUI
         out = (self.get_pos_from_coords(r, c), self.players_damages[damaged_player])
@@ -309,14 +309,14 @@ class AbaloneGame:
     # =========================================================================
 
     def _action_change_current_pos(self, pos):
-        print('_action_change_current_pos')
+        #print('_action_change_current_pos')
         out = {'selected' : (self.current_pos, pos)}
         self.current_pos = pos
         return out
 
     def _action_move(self, r, c):
 
-        print('_action_move')
+        #print('_action_move')
 
         out = {}
         r_curr, c_curr = self.positions[self.current_pos]
@@ -330,7 +330,7 @@ class AbaloneGame:
             step, direction_index = inline
             r_step, c_step = AbaloneGame.ACTIONS[direction_index]
 
-            print(f'dr={dr} dc={dc} | {step}{AbaloneGame.ACTIONS_NAME[direction_index]}')
+            #print(f'dr={dr} dc={dc} | {step}{AbaloneGame.ACTIONS_NAME[direction_index]}')
 
             # =====================================================================
             # RULE | At any turn, no more than 3 friendly marbles can be moved
@@ -354,10 +354,10 @@ class AbaloneGame:
         # RULE | A 'Side step' move: Marbles are moved sideways into adjacent free spaces.
         # ========================================================================= 
         else:
-            print('SIDE STEP')
+            #print('SIDE STEP')
 
             sidestep = self.check_sidestep_move(r_curr, c_curr, r, c)
-            print("out", sidestep)
+            #print("out", sidestep)
 
             if sidestep:
                 old_poss, new_poss, side_move = sidestep
@@ -368,7 +368,7 @@ class AbaloneGame:
         return out
 
     def _action_push(self, r, c):
-        print('_action_push')
+        #print('_action_push')
 
         out = {}
         r_curr, c_curr = self.positions[self.current_pos]
@@ -378,7 +378,7 @@ class AbaloneGame:
         if inline:
             step, direction_index = inline
             r_step, c_step = AbaloneGame.ACTIONS[direction_index]
-            print(f'dr={dr} dc={dc} | {step}{AbaloneGame.ACTIONS_NAME[direction_index]}')
+            #print(f'dr={dr} dc={dc} | {step}{AbaloneGame.ACTIONS_NAME[direction_index]}')
 
             # validate the move : find the free spot
             related = [[(r_curr, c_curr)]]
@@ -394,14 +394,14 @@ class AbaloneGame:
                 if (r_i, c_i) == (r, c):
                     reached = True
                 r_i, c_i = r_i + r_step , c_i +  c_step
-            print('_', reached, related, [len(x) for x in related])
+            #print('_', reached, related, [len(x) for x in related])
             
             if len(related)==2 and reached:
                 # =========================================================================
                 # RULE | Sumito : (2vs1) (3vs1) (3vs2)
                 # ========================================================================= 
                 if len(related[0])>len(related[1]) and len(related[0])<4:
-                    print('PUSHED')
+                    #print('PUSHED')
                     related = [item for sublist in related for item in sublist][::-1]
        
                     # check if we need to eject a marble

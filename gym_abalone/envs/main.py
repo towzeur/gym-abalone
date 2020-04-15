@@ -6,7 +6,7 @@ import time
 import json
 
 from gamelogic import AbaloneGame
-from gameutils import AbaloneUtils, debug
+from gameutils import AbaloneUtils
 
 
 class Marble:
@@ -24,7 +24,7 @@ class Marble:
         1  : (255, 255, 255, 255)
     }
     
-    def __init__(self, player, theme, batch, groups, debug=True):
+    def __init__(self, player, theme, batch, groups, debug=False):
         self.player = player
 
         self.theme = theme
@@ -114,22 +114,18 @@ class Marble:
         self.sprites['selected'].visible = False
 
     def take_out(self, out_index):
-        try:
-            if out_index < len(self.theme['out_coordinates'][self.player]):
-                print('checkpoint 2')
-                x_out, y_out = self.theme['out_coordinates'][self.player][out_index]
-                self.sprites['marble'].update(x=x_out, y=y_out)
+        if out_index < len(self.theme['out_coordinates'][self.player]):
+            x_out, y_out = self.theme['out_coordinates'][self.player][out_index]
+            self.sprites['marble'].update(x=x_out, y=y_out)
 
-                self.sprites['arrow'].visible = False
-                self.sprites['selected'].visible = False
-                if self.debug:
-                    self.sprites['label'].x = x_out
-                    self.sprites['label'].y = y_out
-                    self.sprites['label'].text = f'.{out_index}'
-                    self.sprites['label'].visible = False
-        except Exception as e:
-            print(e)
+            self.sprites['arrow'].visible = False
+            self.sprites['selected'].visible = False
 
+            if self.debug:
+                self.sprites['label'].x = x_out
+                self.sprites['label'].y = y_out
+                self.sprites['label'].text = f'.{out_index}'
+                self.sprites['label'].visible = False
 
 class Header:
 
@@ -236,7 +232,7 @@ class Board:
             self.marbles = None
             self.marbles_out = None
 
-    def _init_marbles(self, game, debug=True):
+    def _init_marbles(self, game, debug=False):
         # init marbles
         self.marbles = [None] * self.theme['locations']
         for player in range(game.players):
@@ -247,7 +243,7 @@ class Board:
         self.marbles_out = []
 
 
-    def init_board(self, game, debug=debug):
+    def init_board(self, game, debug=False):
         self._reset_marbles()
         self._init_marbles(game, debug=debug)
 
@@ -330,7 +326,7 @@ class window(pyglet.window.Window):
         y_centered = (self.screen.height - self.height) // 2
         self.set_location(x_centered, y_centered)
 
-    def start(self, player=0, random_player=True, variant_name='classical', random_pick=True, debug=True):
+    def start(self, player=0, random_player=True, variant_name='classical', random_pick=True, debug=False):
         # init the game
         self.game.init_game(
             player=player, random_player=True,
@@ -350,11 +346,11 @@ class window(pyglet.window.Window):
         self.board.demo()
 
     def on_mouse_press(self, x, y, button, modifiers):
-        print(f'({x}, {y})')
+        #print(f'({x}, {y})')
         pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
         if pos != -1:
             modifications = self.game.action_handler(pos)
-            print(modifications)
+            #print(modifications)
             self.board.update(modifications)
             self.header.update(self.game)
 
@@ -370,6 +366,7 @@ class window(pyglet.window.Window):
 if __name__ == '__main__':
 
     abalone_gui = window()
-    abalone_gui.start(variant_name='anglattack', random_pick=False, debug=True)
+    #abalone_gui.start(variant_name='anglattack', random_pick=False, debug=True)
+    abalone_gui.start(random_pick=True, debug=False)
     #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
