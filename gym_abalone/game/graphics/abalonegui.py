@@ -62,10 +62,16 @@ class AbaloneGui(pyglet.window.Window):
         #print(f'({x}, {y})')
         pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
         if pos != -1:
+            self.action(pos)
+    
+    def action(self, pos):
+        try:
             modifications = self.game.action_handler(pos)
-            #print(modifications)
+            print(modifications)
             self.board.update(modifications)
             self.header.update(self.game)
+        except Exception as e:
+            print(e)
 
     def on_key_press(self, symbol, modifiers):
         pass
