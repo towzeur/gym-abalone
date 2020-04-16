@@ -16,7 +16,9 @@ class Board:
         self.marbles = None
         self.marbles_out = None
 
-    def _reset_marbles(self):
+        self.current_pos = None
+
+    def _delete_marbles_sprites(self):
         # reset players's sprites
         if self.marbles:
             for marble in self.marbles + self.marbles_out:
@@ -26,8 +28,9 @@ class Board:
             self.marbles = None
             self.marbles_out = None
 
-    def _init_marbles(self, game, debug=False):
+    def _reset_marbles_sprites(self, game, debug=False):
         # init marbles
+
         self.marbles = [None] * self.theme['locations']
         for player in range(game.players):
             for pos in game.players_sets[player]:
@@ -36,29 +39,34 @@ class Board:
                 self.marbles[pos] = marble
         self.marbles_out = []
 
+    def reset(self, game, debug=False):
+        self._delete_marbles_sprites()
+        self._reset_marbles_sprites(game, debug=debug)
+        self.unset_current_pos()
 
-    def init_board(self, game, debug=False):
-        self._reset_marbles()
-        self._init_marbles(game, debug=debug)
+    def unset_current_pos(self):
+        if isinstance(self.current_pos, int) and self.marbles[self.current_pos]:
+            self.marbles[self.current_pos].unselect()
+        self.current_pos = None
 
+    def set_current_pos(self, new_pos):
+        # un select the previous selected posw
+        self.unset_current_pos()
+        
+        # select the new one
+        self.current_pos = new_pos
+        self.marbles[new_pos].select()
 
     def update(self, modifications):
+
         if modifications is None:
             return
 
-        # it's important to start with this becayse the prev_selec will change !
-        if 'new_turn' in modifications:
-            self.marbles[modifications['new_turn']].unselect()
-            for marble in self.marbles:
-                if marble:
-                    marble.hide_arrow()
-
-        # change selected marble
-        if 'selected' in modifications:
-            old_pos, new_pos = modifications['selected']
-            if old_pos and self.marbles[old_pos]:
-                self.marbles[old_pos].unselect()
-            self.marbles[new_pos].select()
+        # it's important to start with this because the prev_selec will change !
+        self.unset_current_pos()
+        for marble in self.marbles:
+            if marble:
+                marble.hide_arrow()
 
         if 'damage' in modifications:
             old_pos, out_index = modifications['damage']
