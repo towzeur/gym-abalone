@@ -67,7 +67,6 @@ class AbaloneGui(pyglet.window.Window):
     def action(self, pos):
         try:
             modifications = self.game.action_handler(pos)
-            print(modifications)
             self.board.update(modifications)
             self.header.update(self.game)
         except Exception as e:

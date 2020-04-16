@@ -56,7 +56,7 @@ class Board:
         # change selected marble
         if 'selected' in modifications:
             old_pos, new_pos = modifications['selected']
-            if old_pos is not None and self.marbles[old_pos] is not None:
+            if old_pos and self.marbles[old_pos]:
                 self.marbles[old_pos].unselect()
             self.marbles[new_pos].select()
 
