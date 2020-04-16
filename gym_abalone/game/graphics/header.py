@@ -4,20 +4,10 @@ from ..common.gameutils import AbaloneUtils
 class Header:
 
     DISPLAYED_INFO = [
-        "player turn",
-        "episode",
-        "turns",
-        "elapsed time",
-        "game state"
-    ]
-
-    
-    DISPLAYED_INFO_DEFAULT_DATA = [
-        "0",
-        "0",
-        "1",
-        "0",
-        "WAITING"
+        "Player",
+        "Episode",
+        "Turns",
+        "State"
     ]
 
     INFO_STYLE = {
@@ -29,7 +19,11 @@ class Header:
         'anchor_y'  : 'center',
     }
 
+    PADDING_X_0 = 10
+
     PADDING_X = 30 # pixel
+
+    SEPARATORS = '|'
 
     def __init__(self, theme, batch, groups):
         self.theme = theme
@@ -59,9 +53,9 @@ class Header:
         y = self.y0 + self.height // 2
 
         for i, (info_name, info_data) in enumerate(zip(Header.DISPLAYED_INFO, infos_tuple)):
-            x += Header.PADDING_X
+            x += (Header.PADDING_X if i>0 else Header.PADDING_X_0)
 
-            displayed_string = f"{info_name} : {info_data}"
+            displayed_string = " ".join((info_name, Header.SEPARATORS, str(info_data)))
 
             self.infos_sprites[i].text = displayed_string
             self.infos_sprites[i].x = x 
@@ -72,10 +66,9 @@ class Header:
     def get_infos_tuple(self, game):
         infos_tuple = [None] * len(Header.DISPLAYED_INFO)
         infos_tuple[0] = self.theme["players_name"][game.current_player]
-        infos_tuple[1] = 0 #"episode",
+        infos_tuple[1] = game.episode
         infos_tuple[2] = game.turns_count
-        infos_tuple[3] = 0 #"elapsed time",
-        infos_tuple[4] = 'TODO' # '"game state"
+        infos_tuple[3] = 'ON GOING' if not game.game_over else 'OVER'
         return infos_tuple
 
     def update(self, game):

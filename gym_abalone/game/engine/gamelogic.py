@@ -46,6 +46,8 @@ class AbaloneGame:
         self.current_player = None
         self.current_pos = None
         self.game_over = False
+
+        self.episode = 0
         
 
     def init_game(self, player=0, random_player=True, variant_name='classical', random_pick=False):
@@ -80,6 +82,8 @@ class AbaloneGame:
         self.current_player = np.random.randint(self.players) if random_player else player
         self.current_pos = None
         self.game_over = False
+
+        self.episode += 1
 
     # =========================================================================
     #                           BOARD RELATED 
