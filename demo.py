@@ -1,5 +1,5 @@
 import gym
-from env.gym_abalone.envs.gym_abalone import AbaloneEnv
+from gym_abalone.envs.abalone_env import AbaloneEnv
 
 #env = gym.make('abalone-v0')
 

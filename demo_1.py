@@ -10,5 +10,5 @@ if __name__ == '__main__':
     #pyglet.clock.schedule_interval(abalone_gui.update, 1)
     pyglet.app.run()
 
-
+    print('hello')
 

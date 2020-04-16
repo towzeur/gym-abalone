@@ -3,6 +3,8 @@ from gym import error, spaces, utils, logger
 from gym.utils import seeding
 import numpy as np
 
+from gym_abalone.game.graphics.abalonegui import AbaloneGui
+
 class AbaloneEnv(gym.Env):
     """
     Description:
@@ -40,7 +42,7 @@ class AbaloneEnv(gym.Env):
         
         super(AbaloneEnv, self).__init__()
 
-        self.game_engine = None
+        self.GameGui = AbaloneGui()
 
         self.size = None
         self.state = None #GoGame.get_init_board(size)
@@ -48,7 +50,7 @@ class AbaloneEnv(gym.Env):
 
         # Every environment comes with an action_space and an observation_space. 
         # These attributes are of type Space
-        self.action_space = gym.spaces.Box(0, 60, shape=(0, 2), dtype=np.int8)
+        self.action_space = gym.spaces.Box(0, 60, shape=(2,), dtype=np.uint8)
 
         self.observation_space = gym.spaces.Box(np.int8(0), np.int8(-1), shape=(11, 11), dtype=np.int8)
                                                 
@@ -62,7 +64,7 @@ class AbaloneEnv(gym.Env):
             action (object) : the board
 
         Returns:
-            observation (object): the list with all the position (tuple)
+            observation (object):
             reward (float)
             done (boolean)
             info (dict)
