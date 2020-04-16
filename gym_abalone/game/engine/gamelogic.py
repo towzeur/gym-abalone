@@ -327,10 +327,13 @@ class AbaloneGame:
             # if we seen only 1 player change
             if len(related)==2 and reached:
                 if len(related[0])>len(related[1]) and len(related[0])<4:
+                    
+                    # is a marble ejected
+                    ejected = (self.board[r_i, c_i] == AbaloneGame.TOKEN_VOID)
 
                     # if we dont need to construct the moves just return True
                     if not return_modif:
-                        return True
+                        return True, ejected
                     
                     out = {}
                     # flatten the list : allies and enemies will be pushed the same way
@@ -338,7 +341,7 @@ class AbaloneGame:
     
                     # check if we need to eject a marble :
                     # the last pos is the void
-                    ejected = (self.board[r_i, c_i] == AbaloneGame.TOKEN_VOID)
+                    
                     new_r, new_c = related[0] if ejected else (r_i, c_i)
                     if ejected:
                         related.pop(0)
@@ -364,8 +367,7 @@ class AbaloneGame:
         Returns:
             Bool 
         """
-
-        # depature pos must be one of the player's marble
+        # start pos must be one of the player's marble
         r0, c0 = self.get_coords_from_pos(pos0)
         if self.board[r0, c0] != player:
             return False
@@ -378,14 +380,15 @@ class AbaloneGame:
         # empty spot
         elif self.board[r1, c1] == AbaloneGame.TOKEN_EMPTY:
             if self.check_inline_move(r0, c0, r1, c1, player, return_modif=False):
-                return True
+                return 'inline_move'
             if self.check_sidestep_move(r0, c0, r1, c1, player, return_modif=False):
-                return True
+                return 'sidestep_move'
         
         # enemy marble
         else:
-            if self.check_inline_push(r0, c0, r1, c1, player, return_modif=False):
-                return True
+            inline_push = self.check_inline_push(r0, c0, r1, c1, player, return_modif=False)
+            if inline_push:
+                return 'ejected' if inline_push[1] else 'inline_push'
 
         return False   
 
@@ -394,11 +397,12 @@ class AbaloneGame:
         for pos, (r, c) in enumerate(self.positions):
             (player_pos if self.board[r, c]==player else other_pos).append(pos)
 
-        possibles_moves = []
+        possibles_moves = {'ejected':[], 'inline_move':[], 'sidestep_move':[], 'inline_push':[]}
         for pos0 in player_pos:
             for pos1 in other_pos:
-                if self.validate_move(pos0, pos1, player):
-                    possibles_moves.append((pos0, pos1))
+                move_type = self.validate_move(pos0, pos1, player)
+                if move_type:
+                    possibles_moves[move_type].append((pos0, pos1))
 
         return possibles_moves
 
@@ -482,10 +486,10 @@ class AbaloneGame:
             return modifications
 
     def action_handler(self, pos):
-        pm = self.get_possible_moves(self.current_player)
-        print(len(pm))
-        pm_from_pos = [(p0, p1) for p0, p1 in pm if p0==self.current_pos]
-        print(len(pm_from_pos), pm_from_pos)
+        #pm = self.get_possible_moves(self.current_player)
+        #print(len(pm))
+        #pm_from_pos = [(p0, p1) for p0, p1 in pm if p0==self.current_pos]
+        #print(len(pm_from_pos), pm_from_pos)
 
         # do nothing if the game is over !
         if self.game_over:
