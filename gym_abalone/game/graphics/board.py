@@ -58,7 +58,6 @@ class Board:
         self.marbles[new_pos].select()
 
     def update(self, modifications):
-
         if modifications is None:
             return
 
@@ -68,20 +67,18 @@ class Board:
             if marble:
                 marble.hide_arrow()
 
-        if 'damage' in modifications:
-            old_pos, out_index = modifications['damage']
-            self.marbles[old_pos].take_out(out_index)
-            self.marbles_out.append(self.marbles[old_pos])
-            self.marbles[old_pos] = None
-        
-        if 'moves' in modifications:
-            for old_pos, new_pos, angle in modifications['moves']:
+        for old_pos, new_pos, direction_index in modifications:
+            if direction_index == -1: # eject
+                self.marbles[old_pos].take_out(new_pos)
+                self.marbles_out.append(self.marbles[old_pos])
+                self.marbles[old_pos] = None
+            else:
                 # swap
                 self.marbles[new_pos], self.marbles[old_pos] = self.marbles[old_pos], self.marbles[new_pos]
                 # update sprites
                 self.marbles[new_pos].change_position(new_pos)
-                self.marbles[new_pos].change_direction(angle)
-
+                self.marbles[new_pos].change_direction(direction_index)
+        
     def demo(self):
         import numpy as np
         for marble in self.marbles:

@@ -29,6 +29,7 @@ class AbaloneGame:
 
     BOARD_SIZE = 11
 
+    # NUMBER of life
     LIFES = 6
 
     def __init__(self):
@@ -44,11 +45,10 @@ class AbaloneGame:
         # current
         self.turns_count = None
         self.current_player = None
-        self.current_pos = None
         self.game_over = False
 
         self.episode = 0
-        
+    
 
     def init_game(self, player=0, random_player=True, variant_name='classical', random_pick=False):
 
@@ -75,12 +75,11 @@ class AbaloneGame:
             for pos in self.players_sets[p]:
                 r, c = self.positions[pos]
                 self.board[r, c] = p
-        self.players_damages = [0 for p in range(self.players)]
+        self.players_damages = [0] * self.players
 
         # start game counters
         self.turns_count = 1
         self.current_player = np.random.randint(self.players) if random_player else player
-        self.current_pos = None
         self.game_over = False
 
         self.episode += 1
@@ -234,14 +233,12 @@ class AbaloneGame:
                 action_type = 'inline_move'
                 if not return_modif:
                     return action_type
-                out={}
-                # log : moves
-                old_positions = [self.get_pos_from_coords(rr, cr) for rr, cr in related]
-                new_positions = [self.get_pos_from_coords(r1, c1)] + old_positions[:-1]
-                out['moves'] = [(old_pos, new_pos, direction_index)  
-                                for old_pos, new_pos in zip(old_positions, new_positions)]
-
-                return action_type, out 
+                else:
+                    old_positions = [self.get_pos_from_coords(rr, cr) for rr, cr in related]
+                    new_positions = [self.get_pos_from_coords(r1, c1)] + old_positions[:-1]
+                    modifications = [(old_pos, new_pos, direction_index) 
+                                    for old_pos, new_pos in zip(old_positions, new_positions)]
+                    return action_type, modifications 
     
     def check_sidestep_move(self, r0, c0, r1, c1, player, return_modif=True):
 
@@ -282,18 +279,14 @@ class AbaloneGame:
                     if connected and free:
                         #print(AbaloneGame.ACTIONS_NAME[side_move], inline_step, AbaloneGame.ACTIONS_NAME[inline_move])
                         action_type = 'sidestep_move'
-
                         if not return_modif:
                             return action_type
-                            
-                        out= {}
-                        # log moves
-                        old_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in old_coords]
-                        new_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in new_coords]
-                        out['moves'] = [(old_pos, new_pos, side_move)  
-                                        for old_pos, new_pos in zip(old_positions, new_positions)]
-
-                        return action_type, out
+                        else:
+                            old_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in old_coords]
+                            new_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in new_coords]
+                            modifications = [(old_pos, new_pos, side_move)  
+                                              for old_pos, new_pos in zip(old_positions, new_positions)]
+                            return action_type, modifications
 
     
     def check_inline_push(self, r0, c0, r1, c1, player, return_modif=True):
@@ -329,37 +322,32 @@ class AbaloneGame:
             # if we seen only 1 player change
             if len(related)==2 and reached:
                 if len(related[0])>len(related[1]) and len(related[0])<4:
-                    
                     # is a marble ejected
                     ejected = (self.board[r_i, c_i] == AbaloneGame.TOKEN_VOID)
-
                     action_type = 'ejected' if ejected else 'inline_push'
-
                     # if we dont need to construct the moves just return True
                     if not return_modif:
                         return action_type
-                    
-                    out = {}
+                
                     # flatten the list : allies and enemies will be pushed the same way
                     related = [item for sublist in related for item in sublist][::-1]
-    
-                    # check if we need to eject a marble :
-                    # the last pos is the void
-                    
                     new_r, new_c = related[0] if ejected else (r_i, c_i)
+
+                    modifications = []
                     if ejected:
                         related.pop(0)
-                        # log the removed marble
-                        out['damage'] = (self.get_pos_from_coords(new_r, new_c), 
-                                         self.players_damages[self.board[new_r, new_c]])
+                        # -1 because it is a ejected marble
+                        damaged_pos  = self.get_pos_from_coords(new_r, new_c)
+                        damage_index = self.players_damages[self.board[new_r, new_c]]
+                        modifications += [(damaged_pos, damage_index, -1)] 
 
-                    # log : MOVES
-                    old_positions = [self.get_pos_from_coords(rr, cr) for rr, cr in related]
-                    new_positions = [self.get_pos_from_coords(new_r, new_c)] + old_positions[:-1]
-                    out['moves'] = [(old_pos, new_pos, direction_index) 
-                                     for old_pos, new_pos in zip(old_positions, new_positions)]
+                    # simple swap
+                    old_positions  = [self.get_pos_from_coords(rr, cr) for rr, cr in related]
+                    new_positions  = [self.get_pos_from_coords(new_r, new_c)] + old_positions[:-1]
+                    modifications += [(old_pos, new_pos, direction_index) 
+                                       for old_pos, new_pos in zip(old_positions, new_positions)]
 
-                    return action_type, out
+                    return action_type, modifications
     
     def validate_move(self, pos0, pos1, player, return_modif=False):
         """
@@ -425,18 +413,11 @@ class AbaloneGame:
     # =========================================================================
 
     def next_turn(self):
-        self.current_pos = None
         self.current_player = (self.current_player + 1) % self.players
         self.turns_count += 1
     
     def swap_coords(self, r0, c0, r1, c1):
         self.board[r0, c0], self.board[r1, c1] = self.board[r1, c1], self.board[r0, c0]
-
-    def swap_pos_lists(self, old_positions, new_positions):
-        for old_pos, new_pos in zip(old_positions, new_positions):
-            r_old, c_old = self.get_coords_from_pos(old_pos)
-            r_new, c_new = self.get_coords_from_pos(new_pos)
-            self.swap_coords(r_old, c_old, r_new, c_new)
 
     def eject(self, r, c):
         #print('EJECT')
@@ -449,16 +430,14 @@ class AbaloneGame:
     def apply_modifications(self, modifications):
         if not modifications:
             return
-
-        if 'damage' in modifications:
-            pos_ejected = modifications['damage'][0]
-            r_ejected, c_ejected = self.get_coords_from_pos(pos_ejected)
-            self.eject(r_ejected, c_ejected)
-
-        if 'moves' in modifications:
-            old_positions = [m[0] for m in modifications['moves']]
-            new_positions = [m[1] for m in modifications['moves']]
-            self.swap_pos_lists(old_positions, new_positions)
+        
+        for old_pos, new_pos, direction_index in modifications:
+            r_old, c_old = self.get_coords_from_pos(old_pos)
+            if direction_index == -1: # -1 means that the marble need to be ejected
+                self.eject(r_old, c_old)
+            else: # otherwise just it's just a swap
+                r_new, c_new = self.get_coords_from_pos(new_pos)
+                self.swap_coords(r_old, c_old, r_new, c_new)
 
         self.next_turn()
 
@@ -478,6 +457,7 @@ class AbaloneGame:
         if move_check:
             move_type, modifications = move_check
             self.apply_modifications(modifications)
+            print(modifications)
             return (move_type, modifications) if return_modif else move_type
         
 if __name__ == '__main__':

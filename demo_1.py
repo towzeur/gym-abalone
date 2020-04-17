@@ -4,7 +4,7 @@ from gym_abalone.game.graphics.abalonegui import AbaloneGui
 import random
 import time
 
-DT = 1
+DT = 5
 
 
 class Agents:
