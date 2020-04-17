@@ -457,7 +457,7 @@ class AbaloneGame:
         if move_check:
             move_type, modifications = move_check
             self.apply_modifications(modifications)
-            print(modifications)
+            move_type = 'winner' if self.game_over else move_type
             return (move_type, modifications) if return_modif else move_type
         
 if __name__ == '__main__':
