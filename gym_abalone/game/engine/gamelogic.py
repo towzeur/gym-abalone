@@ -78,7 +78,7 @@ class AbaloneGame:
         self.players_damages = [0 for p in range(self.players)]
 
         # start game counters
-        self.turns_count = 0
+        self.turns_count = 1
         self.current_player = np.random.randint(self.players) if random_player else player
         self.current_pos = None
         self.game_over = False
@@ -171,7 +171,7 @@ class AbaloneGame:
             c (int) : the token to search for
 
         Returns:
-            (tuple): the list with all the position (tuple)
+            (tuple): the 3 directions index
         """
         return (r, c, r+c-4)
 
@@ -231,17 +231,17 @@ class AbaloneGame:
             related = [(r0+n*r_step, c0+n*c_step) for n in reversed(range(step))]
             # if all the related marbles belongs to the same player
             if all([self.board[rr, cr] == self.current_player for rr, cr in related]):
+                action_type = 'inline_move'
                 if not return_modif:
-                    return True
+                    return action_type
                 out={}
                 # log : moves
                 old_positions = [self.get_pos_from_coords(rr, cr) for rr, cr in related]
                 new_positions = [self.get_pos_from_coords(r1, c1)] + old_positions[:-1]
                 out['moves'] = [(old_pos, new_pos, direction_index)  
                                 for old_pos, new_pos in zip(old_positions, new_positions)]
-                # log : new_turn
-                out['new_turn'] = self.get_pos_from_coords(r0, c0)
-                return out
+
+                return action_type, out 
     
     def check_sidestep_move(self, r0, c0, r1, c1, player, return_modif=True):
 
@@ -281,17 +281,19 @@ class AbaloneGame:
                     
                     if connected and free:
                         #print(AbaloneGame.ACTIONS_NAME[side_move], inline_step, AbaloneGame.ACTIONS_NAME[inline_move])
+                        action_type = 'sidestep_move'
+
                         if not return_modif:
-                            return True
+                            return action_type
+                            
                         out= {}
                         # log moves
                         old_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in old_coords]
                         new_positions = [self.get_pos_from_coords(r_, c_) for r_, c_ in new_coords]
                         out['moves'] = [(old_pos, new_pos, side_move)  
                                         for old_pos, new_pos in zip(old_positions, new_positions)]
-                        # log : new_turn
-                        out['new_turn'] = self.get_pos_from_coords(r0, c0)
-                        return out
+
+                        return action_type, out
 
     
     def check_inline_push(self, r0, c0, r1, c1, player, return_modif=True):
@@ -331,9 +333,11 @@ class AbaloneGame:
                     # is a marble ejected
                     ejected = (self.board[r_i, c_i] == AbaloneGame.TOKEN_VOID)
 
+                    action_type = 'ejected' if ejected else 'inline_push'
+
                     # if we dont need to construct the moves just return True
                     if not return_modif:
-                        return True, ejected
+                        return action_type
                     
                     out = {}
                     # flatten the list : allies and enemies will be pushed the same way
@@ -355,12 +359,9 @@ class AbaloneGame:
                     out['moves'] = [(old_pos, new_pos, direction_index) 
                                      for old_pos, new_pos in zip(old_positions, new_positions)]
 
-                    # log : new_turn
-                    out['new_turn'] = self.get_pos_from_coords(r0, c0)
-
-                    return out
+                    return action_type, out
     
-    def validate_move(self, pos0, pos1, player):
+    def validate_move(self, pos0, pos1, player, return_modif=False):
         """
         Checks if the move given move (pos0, pos1) is valid
             
@@ -372,37 +373,50 @@ class AbaloneGame:
         if self.board[r0, c0] != player:
             return False
 
+        # arrival must be empty or an enemy marble
         r1, c1 = self.get_coords_from_pos(pos1)
-        # arrival must be empty or an enemy marble equivalent to no be one players' marble
         if self.board[r1, c1] == player:
             return False
 
         # empty spot
         elif self.board[r1, c1] == AbaloneGame.TOKEN_EMPTY:
-            if self.check_inline_move(r0, c0, r1, c1, player, return_modif=False):
-                return 'inline_move'
-            if self.check_sidestep_move(r0, c0, r1, c1, player, return_modif=False):
-                return 'sidestep_move'
+            # RULE | An "In-line" Move: marbles are moved as a column into a free space
+            move_check = self.check_inline_move(r0, c0, r1, c1, player, return_modif=return_modif)
+            if move_check:
+                return move_check
+
+            # RULE | A 'Side step' move: Marbles are moved sideways into adjacent free spaces.
+            move_check = self.check_sidestep_move(r0, c0, r1, c1, player, return_modif=return_modif)
+            if move_check:
+                return move_check
         
         # enemy marble
         else:
-            inline_push = self.check_inline_push(r0, c0, r1, c1, player, return_modif=False)
-            if inline_push:
-                return 'ejected' if inline_push[1] else 'inline_push'
+            move_check = self.check_inline_push(r0, c0, r1, c1, player, return_modif=return_modif)
+            if move_check:
+                return move_check
 
         return False   
 
-    def get_possible_moves(self, player):
+    def get_possible_moves(self, player, group_by_type=False):
+        # retrieve start and end pos candidate
         other_pos, player_pos  = [], []
         for pos, (r, c) in enumerate(self.positions):
             (player_pos if self.board[r, c]==player else other_pos).append(pos)
 
-        possibles_moves = {'ejected':[], 'inline_move':[], 'sidestep_move':[], 'inline_push':[]}
+        if group_by_type:
+            possibles_moves = {'ejected':[], 'inline_move':[], 'sidestep_move':[], 'inline_push':[]}
+        else:
+            possibles_moves = []
+
         for pos0 in player_pos:
             for pos1 in other_pos:
-                move_type = self.validate_move(pos0, pos1, player)
-                if move_type:
-                    possibles_moves[move_type].append((pos0, pos1))
+                move_check = self.validate_move(pos0, pos1, player, return_modif=False)
+                if move_check:
+                    if group_by_type:
+                        possibles_moves[move_check].append((pos0, pos1))
+                    else:
+                        possibles_moves.append((pos0, pos1))
 
         return possibles_moves
 
@@ -433,9 +447,8 @@ class AbaloneGame:
         self.game_over = any(life == AbaloneGame.LIFES for life in self.players_damages) 
 
     def apply_modifications(self, modifications):
-        print(modifications)
-        if 'selected' in modifications:
-            self.current_pos = modifications['selected'][1]
+        if not modifications:
+            return
 
         if 'damage' in modifications:
             pos_ejected = modifications['damage'][0]
@@ -447,77 +460,25 @@ class AbaloneGame:
             new_positions = [m[1] for m in modifications['moves']]
             self.swap_pos_lists(old_positions, new_positions)
 
-        if 'new_turn' in modifications:
-            self.next_turn()
+        self.next_turn()
 
     # =========================================================================
     #                            ACTION HANDLER
     # =========================================================================
 
-    def _action_change_current_pos(self, pos):
-        #print('_action_change_current_pos')
-        modifications = {'selected' : (self.current_pos, pos)}
-        self.apply_modifications(modifications)
-        return modifications
-
-    def _action_move(self, r, c):
-        #print('_action_move')
-        r_curr, c_curr = self.positions[self.current_pos]
-
-        # RULE | An "In-line" Move: marbles are moved as a column into a free space
-        modifications = self.check_inline_move(r_curr, c_curr, r, c, self.current_player)
-        if modifications:
-            self.apply_modifications(modifications)
-            return modifications
-
-        # RULE | A 'Side step' move: Marbles are moved sideways into adjacent free spaces.
-        else:
-            modifications = self.check_sidestep_move(r_curr, c_curr, r, c, self.current_player)
-            if modifications:
-                self.apply_modifications(modifications)
-                return modifications
-
-    def _action_push(self, r, c):
-        #print('_action_push')
-        r_curr, c_curr = self.positions[self.current_pos]
-        modifications = self.check_inline_push(r_curr, c_curr, r, c, self.current_player)
-        if modifications:
-            self.apply_modifications(modifications)
-            return modifications
-
-    def action_handler(self, pos):
-        #pm = self.get_possible_moves(self.current_player)
-        #print(len(pm))
-        #pm_from_pos = [(p0, p1) for p0, p1 in pm if p0==self.current_pos]
-        #print(len(pm_from_pos), pm_from_pos)
+    def action_handler(self, pos0, pos1, return_modif=True):
+        assert isinstance(pos0, (int, np.uint8)) and isinstance(pos1, (int, np.uint8))
 
         # do nothing if the game is over !
         if self.game_over:
             print('GAME OVER !')
             return
 
-        r, c = self.get_coords_from_pos(pos)
-        token = self.board[r, c]
-        #print(token, self.current_pos, self.current_player)
-
-        # if we clicked on a empty position
-        if token == AbaloneGame.TOKEN_EMPTY:
-            # is this a missclick ?
-            if self.current_pos is None:
-                return
-            # can the current_pos be moved to the new pos ?
-            else:
-                return self._action_move(r, c)
-
-        # we clicked on a player
-        else:
-            # is this the current player ?
-            if token == self.current_player:
-                return self._action_change_current_pos(pos)
-
-            # this a another player position
-            elif self.current_pos is not None:
-                return self._action_push(r, c)
-
+        move_check = self.validate_move(pos0, pos1, self.current_player, return_modif=return_modif)
+        if move_check:
+            move_type, modifications = move_check
+            self.apply_modifications(modifications)
+            return (move_type, modifications) if return_modif else move_type
+        
 if __name__ == '__main__':
     AbaloneGame()
