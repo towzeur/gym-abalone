@@ -6,6 +6,27 @@ import numpy as np
 from gym_abalone.game.graphics.abalonegui import AbaloneGui
 from gym_abalone.game.engine.gamelogic import AbaloneGame
 
+
+class Reward:
+
+    @staticmethod
+    def method_1(observation, move_type):
+
+        CONST_REWARDS = {
+            'winner'        : 20,
+            'ejected'       : 10, 
+            'inline_push'   :  3,
+            'sidestep_move' :  1, 
+            'inline_move'   :  1,
+        }
+
+        reward = CONST_REWARDS.get(move_type, 0)
+
+        return reward
+
+
+
+
 class AbaloneEnv(gym.Env):
     """
     Description:
@@ -39,7 +60,7 @@ class AbaloneEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
 
-    def __init__(self, max_turns=20):
+    def __init__(self, max_turns=200):
         
         super(AbaloneEnv, self).__init__()
 
@@ -48,7 +69,7 @@ class AbaloneEnv(gym.Env):
         self.action_space = gym.spaces.Box(0, 60, shape=(2,), dtype=np.uint8)
         self.observation_space = gym.spaces.Box(np.int8(0), np.int8(-1), shape=(11, 11), dtype=np.int8)
 
-        self.game_engine = AbaloneGame()
+        self.game = AbaloneGame()
         self.max_turns = max_turns
 
         #self.size = None
@@ -71,24 +92,34 @@ class AbaloneEnv(gym.Env):
         """
         assert self.action_space.contains(action), f"{action} ({type(action)})"
 
-        observation = self.observation
         reward = 0
-        done = self.done
-        info = {}
+        info = {
+            'move_type'   : None,
+            'player'      : self.game.current_player,
+            'player_name' : ['white', 'black'][self.game.current_player]
+        }          
 
         if self.done:
             logger.warn("You are calling 'step()' even though this environment has already returned done = True." 
                         "You should always call 'reset()' once you receive 'done = True'"
-                        "-- any further steps are undefined behavior.")
+                        "-- any further steps are undefined behavior.")   
         else:
             pos0, pos1 = action
-            tmp = self.game_engine.action_handler(pos0, pos1, return_modif=True)
+            move_check = self.game.action_handler(pos0, pos1, return_modif=True)
 
+            if move_check: # if the move is a valid move
+                move_type, modifications = move_check
+                reward = Reward.method_1(self.game.board, move_type)
+                # for debug
+                info['move_type'] = move_type
 
-        return observation, reward, done, info
+        return self.observation, reward, self.done, info
 
     def reset(self, player=0, random_player=True, variant_name='classical', random_pick=False):
-        self.game_engine.init_game(player=player, random_player=random_player, variant_name=variant_name, random_pick=random_pick)
+        self.game.init_game(
+            player=player, random_player=random_player, 
+            variant_name=variant_name, random_pick=random_pick
+        )
 
 
     def render(self, mode='human'):
@@ -96,14 +127,18 @@ class AbaloneEnv(gym.Env):
     
     def close(self):
         pass
-    
+
+    @property
+    def turns(self):
+        return self.game.turns_count
+
     @property
     def observation(self):
-        return np.copy(self.game_engine.board)
+        return np.copy(self.game.board)
 
     @property
     def done(self):
-        game_over =      self.game_engine.game_over
-        too_much_turn = (self.game_engine.turns_count > self.max_turns)
+        game_over =      self.game.game_over
+        too_much_turn = (self.game.turns_count > self.max_turns)
         return  game_over or too_much_turn
         
