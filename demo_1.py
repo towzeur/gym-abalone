@@ -35,7 +35,6 @@ class Agents:
         return pos0, pos1
 
 
-
 def random_game(dt, gui):
 
     print(dt)

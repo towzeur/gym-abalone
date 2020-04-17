@@ -1,4 +1,5 @@
 import pyglet
+import time
 from pyglet.window import key
 from ..engine.gamelogic import AbaloneGame
 from ..common.gameutils import AbaloneUtils
@@ -36,6 +37,9 @@ class AbaloneGui(pyglet.window.Window):
         self.header = Header(self.game, self.theme, self.batch, self.groups)
         self.board  = Board (self.game, self.theme, self.batch, self.groups, debug=self.debug)
 
+        self.last_render = time.time()
+        self.render_dt = 1
+
     def _center_window(self):
         # center the window
         x_centered = (self.screen.width - self.width) // 2
@@ -54,11 +58,13 @@ class AbaloneGui(pyglet.window.Window):
         # init the board
         self.board.reset()
         self.header.update()
+        self.on_draw()
 
     def update(self, modifications):
-        print(modifications)
+        #print(modifications)
         self.board.update(modifications)
         self.header.update()
+        self.render()
 
     def action(self, pos):
         # if the player clicked on his own marble
@@ -86,6 +92,28 @@ class AbaloneGui(pyglet.window.Window):
                     move_type, modifications = move_check
                     self.update(modifications)
                     return move_type
+
+    # =========================================================================
+    #                              GYM INTEGRATION
+    # =========================================================================
+
+    def render(self, steps_duration=None):
+        #glClearColor(1,1,1,1)
+        self.clear()
+        self.batch.draw()
+        self.switch_to()
+        self.dispatch_events()
+        self.flip()
+        
+        if steps_duration:
+            start = time.time()
+            remaining = steps_duration - (start - self.last_render)
+            if remaining > 0:
+                delta = 0
+                while delta < remaining:
+                    self.dispatch_events()
+                    delta = time.time() - start
+            self.last_render = time.time()
 
     # =========================================================================
     #                               PYGLET EVENTS

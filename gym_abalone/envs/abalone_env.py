@@ -25,8 +25,6 @@ class Reward:
         return reward
 
 
-
-
 class AbaloneEnv(gym.Env):
     """
     Description:
@@ -57,10 +55,13 @@ class AbaloneEnv(gym.Env):
         Episode length is greater than 200
     """
 
-    metadata = {'render.modes': ['human']}
+    metadata = {
+        'render.modes': ['human', 'terminal'],
+        'video.frames_per_second' : 10,
+        }
 
 
-    def __init__(self, max_turns=200):
+    def __init__(self, render_mode='human', max_turns=200):
         
         super(AbaloneEnv, self).__init__()
 
@@ -68,14 +69,17 @@ class AbaloneEnv(gym.Env):
         # These attributes are of type Space
         self.action_space = gym.spaces.Box(0, 60, shape=(2,), dtype=np.uint8)
         self.observation_space = gym.spaces.Box(np.int8(0), np.int8(-1), shape=(11, 11), dtype=np.int8)
+        
+        self.render_mode = render_mode
+        self.max_turns = max_turns
 
         self.game = AbaloneGame()
-        self.max_turns = max_turns
+        self.gui = None
+        self._modifications = None
 
         #self.size = None
         #self.state = None #GoGame.get_init_board(size)
         #self.reward_method = 'default'
-
 
     def step(self, action):
         """
@@ -108,7 +112,7 @@ class AbaloneEnv(gym.Env):
             move_check = self.game.action_handler(pos0, pos1, return_modif=True)
 
             if move_check: # if the move is a valid move
-                move_type, modifications = move_check
+                move_type, self._modifications = move_check
                 reward = Reward.method_1(self.game.board, move_type)
                 # for debug
                 info['move_type'] = move_type
@@ -116,17 +120,23 @@ class AbaloneEnv(gym.Env):
         return self.observation, reward, self.done, info
 
     def reset(self, player=0, random_player=True, variant_name='classical', random_pick=False):
-        self.game.init_game(
+        self.game.reset(
             player=player, random_player=random_player, 
             variant_name=variant_name, random_pick=random_pick
         )
 
-
-    def render(self, mode='human'):
-        pass
-    
+    def render(self):
+        if self.render_mode == 'human':
+            if self.gui is None:
+                self.gui = AbaloneGui(self.game)
+                self.gui.reset()
+            self.gui.update(self._modifications)
+        elif self.render_mode == 'terminal':
+            pass
+ 
     def close(self):
-        pass
+        if self.render_mode == 'human' and self.gui:
+            self.gui.close()
 
     @property
     def turns(self):

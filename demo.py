@@ -3,14 +3,6 @@ import random
 from gym_abalone.envs.abalone_env import AbaloneEnv
 import numpy as np
 
-#env = gym.make('abalone-v0')
-env = AbaloneEnv()
-
-print(env.action_space)
-#> Discrete(2)
-print(env.observation_space)
-#> Box(4,)
-
 class RandomAgent:
 
     @staticmethod
@@ -40,23 +32,22 @@ class RandomAgent:
         return np.array((pos0, pos1), dtype=np.uint8)
 
 
+#env = gym.make('abalone-v0')
+env = AbaloneEnv()
+
+print(env.action_space)
+#> Discrete(2)
+print(env.observation_space)
+#> Box(4,)
+
 NB_EPISODES = 10
-
 for episode in range(1, NB_EPISODES+1):
-
     env.reset(random_player=True, random_pick=True)
-
     done = False
     while not done:
-
         action = RandomAgent.choice_prioritize_random(env)
-
         obs, reward, done, info = env.step(action)
-   
         print(f"{env.turns: <4} | {info['player_name']} | {str(info['move_type']): >16} | reward={reward: >4} ")
-        env.render()
-
+        #env.render()
     print(f"Episode {episode: <4} finished after {env.game.turns_count} turns \n")
-    
-
 env.close()
