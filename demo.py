@@ -11,24 +11,38 @@ print(env.action_space)
 print(env.observation_space)
 #> Box(4,)
 
-
 class RandomAgent:
 
     @staticmethod
     def choice_prioritize_random(env):
         
-        player = env.game_engine.current_player
-        possible_moves = env.game_engine.get_possible_moves(player, group_by_type=True)
+        player = env.game.current_player
+        possible_moves = env.game.get_possible_moves(player, group_by_type=True)
 
         for move_type in ['ejected', 'inline_push', 'sidestep_move', 'inline_move']:
             if possible_moves[move_type]:
                 pos0, pos1 = random.choice(possible_moves[move_type])
                 break
 
-        return np.array((pos0, pos1), dtype=np.unint8)
+        return np.array((pos0, pos1), dtype=np.uint8)
+
+    @staticmethod
+    def choice_random(env):
+        
+        player = env.game.current_player
+        possible_moves = env.game.get_possible_moves(player, group_by_type=False)
+
+        for move_type in ['ejected', 'inline_push', 'sidestep_move', 'inline_move']:
+            if possible_moves[move_type]:
+                pos0, pos1 = random.choice(possible_moves[move_type])
+                break
+
+        return np.array((pos0, pos1), dtype=np.uint8)
 
 
-for episode in range(10):
+NB_EPISODES = 10
+
+for episode in range(1, NB_EPISODES+1):
 
     env.reset(random_player=True, random_pick=True)
 
@@ -38,10 +52,11 @@ for episode in range(10):
         action = RandomAgent.choice_prioritize_random(env)
 
         obs, reward, done, info = env.step(action)
-        print("*******",  done)
+   
+        print(f"{env.turns: <4} | {info['player_name']} | {str(info['move_type']): >16} | reward={reward: >4} ")
         env.render()
 
-    print(f"Episode finished after {env.game_engine.turns_count} turns")
+    print(f"Episode {episode: <4} finished after {env.game.turns_count} turns \n")
     
 
 env.close()
