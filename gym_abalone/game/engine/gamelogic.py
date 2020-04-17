@@ -37,7 +37,8 @@ class AbaloneGame:
         self.board = None
         self.positions = None
         self.variant = None
-        self.players = 0
+        self.players = None
+        self.players_sets = None
 
         # current
         self.turns_count = None
@@ -49,7 +50,7 @@ class AbaloneGame:
         self.players_victories = None
     
 
-    def init_game(self, player=0, random_player=True, variant_name='classical', random_pick=False):
+    def reset(self, player=0, random_player=True, variant_name='classical', random_pick=False):
 
         self.board = self.new_board()
 
@@ -67,11 +68,11 @@ class AbaloneGame:
 
         self.variant = AbaloneUtils.get_variants(variant_name=variant_name, random_pick=random_pick)
         self.players = self.variant["players"]
-        players_sets = self.variant["players_sets"]
+        self.players_sets = self.variant["players_sets"]
 
         # fill the board
         for p in range(self.players):
-            for pos in players_sets[p]:
+            for pos in self.players_sets[p]:
                 r, c = self.positions[pos]
                 self.board[r, c] = p
         self.players_damages = [0] * self.players
@@ -462,6 +463,3 @@ class AbaloneGame:
             self.apply_modifications(modifications)
             move_type = 'winner' if self.game_over else move_type
             return (move_type, modifications) if return_modif else move_type
-        
-if __name__ == '__main__':
-    AbaloneGame()

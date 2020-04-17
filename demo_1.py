@@ -1,11 +1,13 @@
 import pyglet
 from pyglet import clock
-from gym_abalone.game.graphics.abalonegui import AbaloneGui
+
 import random
 import time
 
-DT = 0.3
+from gym_abalone.game.graphics.abalonegui import AbaloneGui
+from gym_abalone.game.engine.gamelogic import AbaloneGame
 
+DT = 0.5
 
 class Agents:
 
@@ -25,7 +27,7 @@ class Agents:
         player = game.current_player
         possible_moves = game.get_possible_moves(player, group_by_type=True)
 
-        for move_type in ['ejected', 'inline_push', 'sidestep_move', 'inline_move']:
+        for move_type in ['ejected', 'inline_push', 'inline_move', 'sidestep_move']:
             if possible_moves[move_type]:
                 pos0, pos1 = random.choice(possible_moves[move_type])
                 break
@@ -51,7 +53,7 @@ def random_game(dt, gui):
         print(f"{gui.game.turns_count-1: <4} {move_type: >14}")
         if gui.game.game_over:
             print('NEW GAME')
-            abalone_gui.start(random_pick=True, debug=False)
+            abalone_gui.reset_game_gui(random_pick=True)
 
     remaining = 0.5*DT - (time.time() - t0)
     pyglet.clock.schedule_once(delayed_action, max(0,  remaining))
@@ -59,11 +61,13 @@ def random_game(dt, gui):
     
 
 if __name__ == '__main__':
-    
-    abalone_gui = AbaloneGui()
-    abalone_gui.start(variant_name='anglattack', random_pick=False, debug=False)
-    #abalone_gui.start(random_pick=True, debug=False)
 
+    game = AbaloneGame()
+ 
+    abalone_gui = AbaloneGui(game)
+    abalone_gui.reset_game_gui(variant_name='anglattack', random_pick=False)
+
+    
     pyglet.clock.schedule_interval(random_game, DT, abalone_gui)
 
     pyglet.app.run()

@@ -4,7 +4,11 @@ from .marble import Marble
 
 class Board:
 
-    def __init__(self, theme, batch, groups):
+    def __init__(self, game, theme, batch, groups, debug=False):
+
+        self.game = game
+        self.debug = debug
+
         self.theme = theme
         self.batch = batch
         self.groups = groups 
@@ -19,29 +23,26 @@ class Board:
         self.current_pos = None
 
     def _delete_marbles_sprites(self):
-        # reset players's sprites
         if self.marbles:
             for marble in self.marbles + self.marbles_out:
                 if marble:
                     marble.delete()
                     del marble
-            self.marbles = None
+            self.marbles     = None
             self.marbles_out = None
 
-    def _reset_marbles_sprites(self, game, debug=False):
-        # init marbles
-
+    def _reset_marbles_sprites(self):
         self.marbles = [None] * self.theme['locations']
-        for player in range(game.players):
-            for pos in game.players_sets[player]:
-                marble = Marble(player, self.theme, self.batch, self.groups, debug=debug)
+        for player in range(self.game.players):
+            for pos in self.game.players_sets[player]:
+                marble = Marble(player, self.theme, self.batch, self.groups, debug=self.debug)
                 marble.change_position(pos)
                 self.marbles[pos] = marble
         self.marbles_out = []
 
-    def reset(self, game, debug=False):
+    def reset(self):
         self._delete_marbles_sprites()
-        self._reset_marbles_sprites(game, debug=debug)
+        self._reset_marbles_sprites()
         self.unset_current_pos()
 
     def unset_current_pos(self):

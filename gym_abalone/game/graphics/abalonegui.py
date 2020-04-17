@@ -7,10 +7,14 @@ from .header import Header
 
 class AbaloneGui(pyglet.window.Window):
 
-    def __init__(self, theme="default"):
+    def __init__(self, game, theme_name="default", debug=False):
+
+        self.game = game
+        self.theme_name = theme_name
+        self.theme = AbaloneUtils.get_theme(theme_name) 
+        self.debug = debug
 
         # set the theme 
-        self.theme = AbaloneUtils.get_theme(theme) 
         width  = self.theme['dimension']['width']
         height = self.theme['dimension']['height'] + self.theme['dimension']['header_height']            
 
@@ -29,9 +33,8 @@ class AbaloneGui(pyglet.window.Window):
 
         # ============================== game component ==============================
 
-        self.game = AbaloneGame() # game engine
-        self.header = Header(self.theme, self.batch, self.groups)
-        self.board = Board(self.theme, self.batch, self.groups)
+        self.header = Header(self.game, self.theme, self.batch, self.groups)
+        self.board  = Board (self.game, self.theme, self.batch, self.groups, debug=self.debug)
 
     def _center_window(self):
         # center the window
@@ -39,36 +42,29 @@ class AbaloneGui(pyglet.window.Window):
         y_centered = (self.screen.height - self.height) // 2
         self.set_location(x_centered, y_centered)
 
-    def start(self, player=0, random_player=True, variant_name='classical', random_pick=True, debug=False):
-        # init the game
-        self.game.init_game(
-            player=player, random_player=True,
+    
+    def reset_game_gui(self, player=0, random_player=True, variant_name='classical', random_pick=False):
+        self.game.reset(
+            player=player, random_player=random_player, 
             variant_name=variant_name, random_pick=random_pick
         )
+        self.reset()
+
+    def reset(self):
         # init the board
-        self.board.reset(self.game, debug=debug)
-        self.header.update(self.game)
+        self.board.reset()
+        self.header.update()
 
-    def on_draw(self):
-        self.clear()
-        self.batch.draw()
+    def update(self, modifications):
+        print(modifications)
+        self.board.update(modifications)
+        self.header.update()
 
-    def update(self, dt):
-        # set random variant
-        self.start(random_pick=True, debug=False)
-        self.board.demo()
-
-    def on_mouse_press(self, x, y, button, modifiers):
-        #print(f'({x}, {y})')
-        pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
-        if pos != -1:
-            self.action(pos)
-    
     def action(self, pos):
         # if the player clicked on his own marble
         # set the focus to it
 
-        pos_token = self.game.get_token_from_pos(pos)
+        pos_token   =  self.game.get_token_from_pos(pos)
         same_player = (self.game.current_player == pos_token)
 
         # no current pos
@@ -88,10 +84,22 @@ class AbaloneGui(pyglet.window.Window):
                 move_check = self.game.action_handler(self.board.current_pos, pos, return_modif=True)
                 if move_check:
                     move_type, modifications = move_check
-                    print(move_type, modifications)
-                    self.board.update(modifications)
-                    self.header.update(self.game)
+                    self.update(modifications)
                     return move_type
+
+    # =========================================================================
+    #                               PYGLET EVENTS
+    # =========================================================================
+
+    def on_draw(self):
+        self.clear()
+        self.batch.draw()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        #print(f'({x}, {y})')
+        pos = AbaloneUtils.is_marbles_clicked(x, y, self.theme)
+        if pos != -1:
+            self.action(pos)
 
     def on_key_press(self, symbol, modifiers):
         pass

@@ -22,6 +22,7 @@ class Marble:
         self.theme = theme
         self.batch = batch
         self.groups = groups
+        
         self.debug = debug
 
         self.sprites = { sprite_name : None for sprite_name in

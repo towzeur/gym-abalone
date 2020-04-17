@@ -7,7 +7,8 @@ class Header:
         "Player",
         "Episode",
         "Turns",
-        "State"
+        "State",
+        "Score"
     ]
 
     INFO_STYLE = {
@@ -25,7 +26,9 @@ class Header:
 
     SEPARATORS = '|'
 
-    def __init__(self, theme, batch, groups):
+    def __init__(self, game, theme, batch, groups):
+        
+        self.game = game
         self.theme = theme
         self.batch = batch
         self.groups = groups
@@ -63,14 +66,12 @@ class Header:
 
             x += self.infos_sprites[i].content_width
 
-    def get_infos_tuple(self, game):
+    def update(self):
         infos_tuple = [None] * len(Header.DISPLAYED_INFO)
-        infos_tuple[0] = self.theme["players_name"][game.current_player]
-        infos_tuple[1] = game.episode
-        infos_tuple[2] = game.turns_count
-        infos_tuple[3] = 'ON GOING' if not game.game_over else 'OVER'
-        return infos_tuple
-
-    def update(self, game):
-        infos_tuple = self.get_infos_tuple(game)
+        infos_tuple[0] = self.theme["players_name"][self.game.current_player]
+        infos_tuple[1] = self.game.episode
+        infos_tuple[2] = self.game.turns_count
+        infos_tuple[3] = 'ON GOING' if not self.game.game_over else 'OVER'
+        infos_tuple[4] = " : ".join([f'{self.theme["players_name"][p][0].upper()} {self.game.players_victories[p]}' 
+                                     for p in range(self.game.players)])
         self.draw(infos_tuple)
