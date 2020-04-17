@@ -46,7 +46,7 @@ class AbaloneGui(pyglet.window.Window):
             variant_name=variant_name, random_pick=random_pick
         )
         # init the board
-        self.board.init_board(self.game, debug=debug)
+        self.board.reset(self.game, debug=debug)
         self.header.update(self.game)
 
     def on_draw(self):
@@ -65,12 +65,33 @@ class AbaloneGui(pyglet.window.Window):
             self.action(pos)
     
     def action(self, pos):
-        try:
-            modifications = self.game.action_handler(pos)
-            self.board.update(modifications)
-            self.header.update(self.game)
-        except Exception as e:
-            print(e)
+        # if the player clicked on his own marble
+        # set the focus to it
+
+        pos_token = self.game.get_token_from_pos(pos)
+        same_player = (self.game.current_player == pos_token)
+
+        # no current pos
+        if self.board.current_pos is None:
+            if same_player:
+                self.board.set_current_pos(pos)
+                print('selected pos :', pos)
+
+        # there is already a selected pos
+        else:
+            # change the current pos to another current player's marble
+            if same_player:
+                self.board.set_current_pos(pos)
+                print('selected pos :', pos)
+            # empty or another player
+            else:
+                move_check = self.game.action_handler(self.board.current_pos, pos, return_modif=True)
+                if move_check:
+                    move_type, modifications = move_check
+                    print(move_type, modifications)
+                    self.board.update(modifications)
+                    self.header.update(self.game)
+                    return move_type
 
     def on_key_press(self, symbol, modifiers):
         pass
