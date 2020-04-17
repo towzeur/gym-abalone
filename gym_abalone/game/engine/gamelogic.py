@@ -84,6 +84,8 @@ class AbaloneGame:
         self.game_over = False
 
         self.episode += 1
+        if self.players_victories is None:
+            self.players_victories = [0] * self.players
 
     # =========================================================================
     #                           BOARD RELATED 
@@ -426,7 +428,7 @@ class AbaloneGame:
         self.players_damages[damaged_player] += 1
         self.board[r, c] = AbaloneGame.TOKEN_EMPTY
         # check if the game is over
-        self.game_over = any(life == damaged_player)
+        self.game_over = (AbaloneGame.LIFES == damaged_player)
         if self.game_over:
             self.players_victories[damaged_player] += 1
 
