@@ -33,20 +33,18 @@ class AbaloneGame:
     LIFES = 6
 
     def __init__(self):
+
         self.board = None
         self.positions = None
         self.variant = None
         self.players = 0
-
-        # var for the game logic
-        self.players_sets = []
-        self.players_damaged_sets = []
 
         # current
         self.turns_count = None
         self.current_player = None
         self.game_over = False
 
+        # episodes
         self.episode = 0
         self.players_victories = None
     
@@ -69,11 +67,11 @@ class AbaloneGame:
 
         self.variant = AbaloneUtils.get_variants(variant_name=variant_name, random_pick=random_pick)
         self.players = self.variant["players"]
-        self.players_sets = self.variant["players_sets"]
+        players_sets = self.variant["players_sets"]
 
         # fill the board
         for p in range(self.players):
-            for pos in self.players_sets[p]:
+            for pos in players_sets[p]:
                 r, c = self.positions[pos]
                 self.board[r, c] = p
         self.players_damages = [0] * self.players
@@ -428,9 +426,9 @@ class AbaloneGame:
         self.players_damages[damaged_player] += 1
         self.board[r, c] = AbaloneGame.TOKEN_EMPTY
         # check if the game is over
-        self.game_over = (AbaloneGame.LIFES == damaged_player)
+        self.game_over = (self.players_damages[damaged_player] == AbaloneGame.LIFES)
         if self.game_over:
-            self.players_victories[damaged_player] += 1
+            self.players_victories[self.current_player] += 1
 
     def apply_modifications(self, modifications):
         if not modifications:
