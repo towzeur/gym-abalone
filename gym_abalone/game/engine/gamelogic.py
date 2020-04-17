@@ -48,6 +48,7 @@ class AbaloneGame:
         self.game_over = False
 
         self.episode = 0
+        self.players_victories = None
     
 
     def init_game(self, player=0, random_player=True, variant_name='classical', random_pick=False):
@@ -425,7 +426,9 @@ class AbaloneGame:
         self.players_damages[damaged_player] += 1
         self.board[r, c] = AbaloneGame.TOKEN_EMPTY
         # check if the game is over
-        self.game_over = any(life == AbaloneGame.LIFES for life in self.players_damages) 
+        self.game_over = any(life == damaged_player)
+        if self.game_over:
+            self.players_victories[damaged_player] += 1
 
     def apply_modifications(self, modifications):
         if not modifications:
