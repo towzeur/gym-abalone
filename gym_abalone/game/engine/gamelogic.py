@@ -326,14 +326,23 @@ class AbaloneGame:
                 if len(related[0])>len(related[1]) and len(related[0])<4:
                     # is a marble ejected
                     ejected = (self.board[r_i, c_i] == AbaloneGame.TOKEN_VOID)
-                    action_type = 'ejected' if ejected else 'inline_push'
-                    # if we dont need to construct the moves just return True
-                    if not return_modif:
-                        return action_type
                 
                     # flatten the list : allies and enemies will be pushed the same way
                     related = [item for sublist in related for item in sublist][::-1]
                     new_r, new_c = related[0] if ejected else (r_i, c_i)
+
+
+                    if not ejected:
+                        action_type = 'inline_push'
+                    # game over
+                    elif (self.players_damages[self.board[new_r, new_c]] + 1 == AbaloneGame.LIFES):
+                        action_type = 'winner'
+                    else:
+                        action_type = 'ejected'
+
+                    # if we dont need to construct the moves just return True
+                    if not return_modif:
+                        return action_type
 
                     modifications = []
                     if ejected:
@@ -395,7 +404,7 @@ class AbaloneGame:
             (player_pos if self.board[r, c]==player else other_pos).append(pos)
 
         if group_by_type:
-            possibles_moves = {'ejected':[], 'inline_move':[], 'sidestep_move':[], 'inline_push':[]}
+            possibles_moves = {'winner':[], 'ejected':[], 'inline_move':[], 'sidestep_move':[], 'inline_push':[]}
         else:
             possibles_moves = []
 
@@ -450,7 +459,7 @@ class AbaloneGame:
     # =========================================================================
 
     def action_handler(self, pos0, pos1, return_modif=True):
-        assert isinstance(pos0, (int, np.uint8)) and isinstance(pos1, (int, np.uint8))
+        #assert isinstance(pos0, (int, np.uint8)) and isinstance(pos1, (int, np.uint8))
 
         # do nothing if the game is over !
         if self.game_over:
@@ -461,7 +470,6 @@ class AbaloneGame:
         if move_check:
             move_type, modifications = move_check
             self.apply_modifications(modifications)
-            move_type = 'winner' if self.game_over else move_type
             return (move_type, modifications) if return_modif else move_type
         
     #def __repr__(self):

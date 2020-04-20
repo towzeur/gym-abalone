@@ -25,6 +25,10 @@ class AbaloneGui(pyglet.window.Window):
         screen = display.get_default_screen()
         # init the window's constructor
         super(AbaloneGui, self).__init__(screen=screen, width=width, height=height, vsync=False)
+
+        self.set_caption('Gym Abalone')
+        self.set_icon(AbaloneUtils.get_im_centered('assets/icons/icon_32x32.png', centered=False))
+
         self._center_window()
         # set the background color to white
         pyglet.gl.glClearColor(1, 1, 1, 1)
@@ -60,11 +64,11 @@ class AbaloneGui(pyglet.window.Window):
         self.header.update()
         self.on_draw()
 
-    def update(self, modifications):
+    def update(self, modifications, fps=None):
         #print(modifications)
         self.board.update(modifications)
         self.header.update()
-        self.render()
+        self.render(fps=fps)
 
     def action(self, pos):
         # if the player clicked on his own marble
@@ -97,7 +101,7 @@ class AbaloneGui(pyglet.window.Window):
     #                              GYM INTEGRATION
     # =========================================================================
 
-    def render(self, steps_duration=None):
+    def render(self, fps=None):
         #glClearColor(1,1,1,1)
         self.clear()
         self.batch.draw()
@@ -105,9 +109,9 @@ class AbaloneGui(pyglet.window.Window):
         self.dispatch_events()
         self.flip()
         
-        if steps_duration:
+        if fps:
             start = time.time()
-            remaining = steps_duration - (start - self.last_render)
+            remaining = fps - (start - self.last_render)
             if remaining > 0:
                 delta = 0
                 while delta < remaining:

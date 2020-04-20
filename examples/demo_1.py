@@ -1,7 +1,5 @@
 """
 demo of the game itself
-
-
 """
 import pyglet
 from pyglet import clock
