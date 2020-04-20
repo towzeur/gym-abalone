@@ -120,9 +120,9 @@ There are only 3 possibilities for pushing the opponent's marbles. Theses situat
 
 | Sumito                          | Diagram                                           |
 | :---:                           | :---:                                             |
-| A "3-push-2 Sumito" ⚫️⚫️⚫️⚪️⚪️ | <img src="docs/rules/sumito/3vs2.png" width=80%> |
-| A "3-push-1 Sumito" ⚫️⚫️⚫️⚪️   | <img src="docs/rules/sumito/3vs1.png" width=80%> |
-| A "2-push-1 Sumito" ⚫️⚫️⚪️     | <img src="docs/rules/sumito/3vs1.png" width=80%> |
+| A "3-push-2 Sumito" ⚫️⚫️⚫️⚪️⚪️ | <img src="docs/rules/sumito/3vs2.png" width=100%> |
+| A "3-push-1 Sumito" ⚫️⚫️⚫️⚪️   | <img src="docs/rules/sumito/3vs1.png" width=100%> |
+| A "2-push-1 Sumito" ⚫️⚫️⚪️     | <img src="docs/rules/sumito/3vs1.png" width=100%> |
 
 ### PAC
 
@@ -171,7 +171,22 @@ features :
 
 ## Observations
 
-Each cell can be decomposed into an orthogonal 2-dimension basis. Each of the 61 cells thus have a unique pair of coordinates (r, c) which respectively corresponds to its row and its column.
+Each cell can be placed into an orthogonal 2-dimension basis. Each of the 61 cells thus have a unique pair of coordinates (r, c) which respectively corresponds to its row and its column.
+
+```
+  0 1 2 3 4 5 6 7 8 9 10
+ 0            
+ 1          ● ● ● ● ● 
+ 2        ● ● ● ● ● ● 
+ 3      · · · ● ● ● ·  
+ 4    · · · · · · · · 
+ 5  · · · · · · · · · 
+ 6  · · · · · · · · 
+ 7  · · o o o · ·   
+ 8  o o o o o o    
+ 9  o o o o o     
+10         
+```
 
 <img src="docs/observation/board_to_matrix.png" width=100% align="center" /></br>
 <em>orthogonal basis</em>
