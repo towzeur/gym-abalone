@@ -4,3 +4,9 @@ work
 # ignore 
 __pycache__
 
+# jupyter lab
+.ipynb_checkpoints
+
+gym_abalone.egg-info
+
+Agents
