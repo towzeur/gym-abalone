@@ -7,6 +7,15 @@ from pathlib import Path
 class AbaloneUtils:
 
     @staticmethod
+    def load_fonts(dirname='assets/fonts/'):
+        path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+        path = path.joinpath(dirname)
+        for font_filename in os.listdir(path):
+            filename = str(path.joinpath(font_filename))
+            print(filename)
+            pyglet.font.add_file(filename)
+
+    @staticmethod
     def _safe_json_pick(target, filename, default, random_pick):
 
         path = Path(os.path.dirname(os.path.realpath(__file__))).parent
