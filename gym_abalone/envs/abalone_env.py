@@ -13,15 +13,14 @@ class Reward:
     def method_1(observation, move_type):
 
         CONST_REWARDS = {
-            'winner'        : 20,
-            'ejected'       : 10, 
-            'inline_push'   :  3,
-            'sidestep_move' :  1, 
-            'inline_move'   :  1,
+            'winner'        :    12,
+            'ejected'       :     2, 
+            'inline_push'   :   0.5,
+            'sidestep_move' :  -0.1, 
+            'inline_move'   :  -0.1,
         }
 
         reward = CONST_REWARDS.get(move_type, 0)
-
         return reward
 
 
@@ -31,28 +30,17 @@ class AbaloneEnv(gym.Env):
         Abalone game environment
 
     Observation: 
-        Type: Box(4)
-        Num	Observation                 Min         Max
-        0	Cart Position             -4.8            4.8
-        1	Cart Velocity             -Inf            Inf
-        2	Pole Angle                 -24 deg        24 deg
-        3	Pole Velocity At Tip      -Inf            Inf
-        
+        Type: Box(61, 61)
+
     Actions:
-        Type: Discrete(2)
-        Num	Action
-        0	Push cart to the left
-        1	Push cart to the right
+        Type: Box(2)
     
     Reward:
-        Reward is 1 for every step taken, including the termination step
-
-    Starting State:
-        All observations are assigned a uniform random value in [-0.05..0.05]
+        see the Reward class' methods
 
     Episode Termination:
-        Abalone gameover (6 marble pushed)
-        Episode length is greater than 200
+        Abalone gameover (6 marbles pushed)
+        Episode length is greater than max_turns.
     """
 
     metadata = {
@@ -77,8 +65,6 @@ class AbaloneEnv(gym.Env):
         self.gui = None
         self._modifications = None
 
-        #self.size = None
-        #self.state = None #GoGame.get_init_board(size)
         #self.reward_method = 'default'
 
     def step(self, action):
@@ -94,10 +80,11 @@ class AbaloneEnv(gym.Env):
             done (boolean)
             info (dict)
         """
-        assert self.action_space.contains(action), f"{action} ({type(action)})"
+        #assert self.action_space.contains(action), f"{action} ({type(action)})"
 
         reward = 0
         info = {
+            'turn'        : self.game.turns_count,
             'move_type'   : None,
             'player'      : self.game.current_player,
             'player_name' : ['white', 'black'][self.game.current_player]
@@ -124,13 +111,16 @@ class AbaloneEnv(gym.Env):
             player=player, random_player=random_player, 
             variant_name=variant_name, random_pick=random_pick
         )
+        if self.render_mode == 'human' and self.gui:
+            self.gui.reset()
+        return self.observation
 
-    def render(self):
+    def render(self, fps=None):
         if self.render_mode == 'human':
             if self.gui is None:
                 self.gui = AbaloneGui(self.game)
                 self.gui.reset()
-            self.gui.update(self._modifications)
+            self.gui.update(self._modifications, fps=fps)
         elif self.render_mode == 'terminal':
             pass
  
@@ -151,4 +141,19 @@ class AbaloneEnv(gym.Env):
         game_over =      self.game.game_over
         too_much_turn = (self.game.turns_count > self.max_turns)
         return  game_over or too_much_turn
-        
+
+    @property
+    def current_player(self):
+        return self.game.current_player
+    
+    def get_action_mask(self):
+        """
+            return a action mask which as a 61*61 = 3721 numpy vector
+            with 0 and 1. 0 if the action is illegal and 1 otherwise.
+        """
+        player = self.game.current_player
+        possible_moves = self.game.get_possible_moves(player, group_by_type=False)
+        possible_index = np.array([p0*61+p1 for p0,p1 in possible_moves])
+        action_mask = np.zeros(61**2)
+        action_mask[possible_index] = np.ones(possible_index.shape)
+        return action_mask
