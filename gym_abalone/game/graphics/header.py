@@ -44,6 +44,8 @@ class Header:
         self.infos_sprites = None
         self._init_sprites()
 
+        #AbaloneUtils.load_fonts()
+
     def _init_sprites(self):
         self.infos_sprites = []
         for _ in range(len(Header.DISPLAYED_INFO)):
