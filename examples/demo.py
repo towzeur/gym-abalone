@@ -1,3 +1,6 @@
+"""
+demo of the env
+"""
 import gym
 import random
 from gym_abalone.envs.abalone_env import AbaloneEnv
@@ -11,12 +14,13 @@ class RandomAgent:
         player = env.game.current_player
         possible_moves = env.game.get_possible_moves(player, group_by_type=True)
 
-        for move_type in ['ejected', 'inline_push', 'sidestep_move', 'inline_move']:
+        for move_type in ['winner', 'ejected', 'inline_push', 'sidestep_move', 'inline_move']:
             if possible_moves[move_type]:
-                pos0, pos1 = random.choice(possible_moves[move_type])
+                i_random = np.random.randint(len(possible_moves[move_type]))
+                pos0, pos1 = possible_moves[move_type][i_random]
                 break
 
-        return np.array((pos0, pos1), dtype=np.uint8)
+        return (pos0, pos1)
 
     @staticmethod
     def choice_random(env):
@@ -24,30 +28,29 @@ class RandomAgent:
         player = env.game.current_player
         possible_moves = env.game.get_possible_moves(player, group_by_type=False)
 
-        for move_type in ['ejected', 'inline_push', 'sidestep_move', 'inline_move']:
-            if possible_moves[move_type]:
-                pos0, pos1 = random.choice(possible_moves[move_type])
-                break
+        i_random = np.random.randint(len(possible_moves))
+        pos0, pos1 = possible_moves[i_random]
 
-        return np.array((pos0, pos1), dtype=np.uint8)
+        return (pos0, pos1)
 
 
 #env = gym.make('abalone-v0')
-env = AbaloneEnv()
-
+env = AbaloneEnv(render_mode='terminal')
 print(env.action_space)
 #> Discrete(2)
 print(env.observation_space)
-#> Box(4,)
+#> Box(11,11)
 
-NB_EPISODES = 10
+
+NB_EPISODES = 1
 for episode in range(1, NB_EPISODES+1):
     env.reset(random_player=True, random_pick=True)
     done = False
     while not done:
         action = RandomAgent.choice_prioritize_random(env)
         obs, reward, done, info = env.step(action)
-        print(f"{env.turns: <4} | {info['player_name']} | {str(info['move_type']): >16} | reward={reward: >4} ")
-        #env.render()
-    print(f"Episode {episode: <4} finished after {env.game.turns_count} turns \n")
+        print(f"{info['turn']: <4} | {info['player_name']} | {str(info['move_type']): >16} | reward={reward: >4} ")
+        env.render(fps=1)
+    print(f"Episode {info['turn']: <4} finished after {env.game.turns_count} turns \n")
 env.close()
+

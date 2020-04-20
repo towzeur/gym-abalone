@@ -1,3 +1,8 @@
+"""
+demo of the game itself
+
+
+"""
 import pyglet
 from pyglet import clock
 
@@ -63,11 +68,11 @@ if __name__ == '__main__':
 
     game = AbaloneGame()
  
-    abalone_gui = AbaloneGui(game)
-    abalone_gui.reset_game_gui(variant_name='anglattack', random_pick=False)
+    abalone_gui = AbaloneGui(game, debug=True)
+    #abalone_gui.reset_game_gui(variant_name='anglattack', random_pick=False)
+    abalone_gui.reset_game_gui()
 
-    
-    pyglet.clock.schedule_interval(random_game, DT, abalone_gui)
+    #pyglet.clock.schedule_interval(random_game, DT, abalone_gui)
 
     pyglet.app.run()
     print('good bye !')
