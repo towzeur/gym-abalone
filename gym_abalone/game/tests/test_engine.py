@@ -1,19 +1,20 @@
+# standard libraries
+import math
 import random
 import unittest
-import math
 
+# third party libraries
 from main import window
 
-class TestGoEnv(unittest.TestCase):
 
+class TestGoEnv(unittest.TestCase):
     def test_inlinepush(self):
 
         gui = window()
-        gui.init_window(variant_name='classical', random_pick=False, debug=True)
+        gui.init_window(variant_name="classical", random_pick=False, debug=True)
 
         self.assertEqual(pos, pos_computed)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-
-

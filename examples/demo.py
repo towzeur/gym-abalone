@@ -1,20 +1,25 @@
 """
 demo of the env
 """
-import gym
+# standard libraries
 import random
-from gym_abalone.envs.abalone_env import AbaloneEnv
+
+# third party libraries
+import gym
 import numpy as np
 
-class RandomAgent:
+# aspirion libraries
+from gym_abalone.envs.abalone_env import AbaloneEnv
 
+
+class RandomAgent:
     @staticmethod
     def choice_prioritize_random(env):
-        
+
         player = env.game.current_player
         possible_moves = env.game.get_possible_moves(player, group_by_type=True)
 
-        for move_type in ['winner', 'ejected', 'inline_push', 'sidestep_move', 'inline_move']:
+        for move_type in ["winner", "ejected", "inline_push", "sidestep_move", "inline_move"]:
             if possible_moves[move_type]:
                 i_random = np.random.randint(len(possible_moves[move_type]))
                 pos0, pos1 = possible_moves[move_type][i_random]
@@ -24,7 +29,7 @@ class RandomAgent:
 
     @staticmethod
     def choice_random(env):
-        
+
         player = env.game.current_player
         possible_moves = env.game.get_possible_moves(player, group_by_type=False)
 
@@ -34,16 +39,16 @@ class RandomAgent:
         return (pos0, pos1)
 
 
-#env = gym.make('abalone-v0')
-env = AbaloneEnv(render_mode='terminal')
+# env = gym.make('abalone-v0')
+env = AbaloneEnv(render_mode="terminal")
 print(env.action_space)
-#> Discrete(2)
+# > Discrete(2)
 print(env.observation_space)
-#> Box(11,11)
+# > Box(11,11)
 
 
 NB_EPISODES = 1
-for episode in range(1, NB_EPISODES+1):
+for episode in range(1, NB_EPISODES + 1):
     env.reset(random_player=True, random_pick=True)
     done = False
     while not done:
@@ -53,4 +58,3 @@ for episode in range(1, NB_EPISODES+1):
         env.render(fps=1)
     print(f"Episode {info['turn']: <4} finished after {env.game.turns_count} turns \n")
 env.close()
-

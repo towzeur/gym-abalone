@@ -1,0 +1,59 @@
+[tool.black]
+line-length = 120
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | src
+  | env
+  | venv
+  | docs
+)/
+'''
+
+[tool.isort]
+profile = "black"
+sections = ["FUTURE" ,"STDLIB" ,"THIRDPARTY", "INFINIAML" ,"FIRSTPARTY", "LOCALFOLDER"]
+import_heading_infiniaml = "Infinia ML libraries"
+import_heading_stdlib = "standard libraries"
+import_heading_thirdparty = "third party libraries"
+import_heading_firstparty = "aspirion libraries"
+known_infiniaml = ["infiniaml", "inference_service"]
+dedup_headings = true
+line_length = 120
+
+[tool.mypy]
+python_version = "3.8"
+disallow_untyped_defs = true
+ignore_missing_imports = true
+strict_optional = false
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ['**/__init__.py']
+
+[tool.coverage.report]
+ignore_errors = false
+show_missing = true
+exclude_lines = [
+    '@abstractmethod',
+    '@abc.abstractmethod',
+    'Protocol'
+]
+
+# packages that are required for setup.py to run must be listed here
+[build-system]
+requires=["setuptools==49.2.0", "wheel==0.34.2"]

@@ -1,0 +1,19 @@
+gymnasium~=0.29
+
+#make test
+pytest~=7.0
+pytest-cov~=3.0
+pytest-mock~=3.7
+pytest-mpl~=0.14
+
+# make format/lint
+black==22.6.0
+flake8==5.0.4
+flake8-docstrings==1.6.0
+isort==5.10.1
+pre-commit
+
+# Other
+jupyter~=1.0
+
+

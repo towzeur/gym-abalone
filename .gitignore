@@ -1,7 +1,7 @@
 # ignore work dir
 work
 
-# ignore 
+# ignore
 __pycache__
 
 # jupyter lab
@@ -10,3 +10,5 @@ __pycache__
 gym_abalone.egg-info
 
 Agents
+
+gym-abalone-venv

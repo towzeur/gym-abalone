@@ -1,9 +1,11 @@
-import pyglet  
+# third party libraries
+import pyglet
+
 from ..common.gameutils import AbaloneUtils
 from .marble import Marble
 
-class Board:
 
+class Board:
     def __init__(self, game, theme, batch, groups, debug=False):
 
         self.game = game
@@ -11,10 +13,10 @@ class Board:
 
         self.theme = theme
         self.batch = batch
-        self.groups = groups 
+        self.groups = groups
 
         # display the background
-        im = AbaloneUtils.get_im_centered(self.theme['sprites']['board'], centered=False)
+        im = AbaloneUtils.get_im_centered(self.theme["sprites"]["board"], centered=False)
         self.sprite = pyglet.sprite.Sprite(im, batch=self.batch, group=self.groups[0])
 
         self.marbles = None
@@ -28,11 +30,11 @@ class Board:
                 if marble:
                     marble.delete()
                     del marble
-            self.marbles     = None
+            self.marbles = None
             self.marbles_out = None
 
     def _reset_marbles_sprites(self):
-        self.marbles = [None] * self.theme['locations']
+        self.marbles = [None] * self.theme["locations"]
         for player in range(self.game.players):
             for pos in self.game.players_sets[player]:
                 marble = Marble(player, self.theme, self.batch, self.groups, debug=self.debug)
@@ -53,7 +55,7 @@ class Board:
     def set_current_pos(self, new_pos):
         # un select the previous selected posw
         self.unset_current_pos()
-        
+
         # select the new one
         self.current_pos = new_pos
         self.marbles[new_pos].select()
@@ -69,7 +71,7 @@ class Board:
                 marble.hide_arrow()
 
         for old_pos, new_pos, direction_index in modifications:
-            if direction_index == -1: # eject
+            if direction_index == -1:  # eject
                 self.marbles[old_pos].take_out(new_pos)
                 self.marbles_out.append(self.marbles[old_pos])
                 self.marbles[old_pos] = None
@@ -79,9 +81,11 @@ class Board:
                 # update sprites
                 self.marbles[new_pos].change_position(new_pos)
                 self.marbles[new_pos].change_direction(direction_index)
-        
+
     def demo(self):
+        # third party libraries
         import numpy as np
+
         for marble in self.marbles:
             if marble:
                 # set random direction
@@ -89,5 +93,5 @@ class Board:
                 marble.change_direction(direction_index)
 
                 # randomly select
-                if np.random.rand() > .5:
+                if np.random.rand() > 0.5:
                     marble.select()

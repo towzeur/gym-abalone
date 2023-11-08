@@ -1,7 +1,9 @@
+# third party libraries
 import gym
 
+
 class AbaloneExtraHardEnv(gym.Env):
-    metadata = {'render.modes': ['human']}
+    metadata = {"render.modes": ["human"]}
 
     def __init__(self):
         super(AbaloneExtraHardEnv, self).__init__()
@@ -12,8 +14,8 @@ class AbaloneExtraHardEnv(gym.Env):
     def reset(self):
         pass
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         pass
-    
+
     def close(self):
         pass
