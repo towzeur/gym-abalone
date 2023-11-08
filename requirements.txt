@@ -1,4 +1,6 @@
-gymnasium~=0.29
+#gymnasium~=0.29
+gym~=0.18
+pyglet~=1.5.15
 
 #make test
 pytest~=7.0
